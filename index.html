@@ -97,8 +97,77 @@ main { max-width: 1400px; margin: 0 auto; padding: 28px 24px; }
 .btn-request:hover { background: rgba(0,200,83,0.2); }
 .btn-del { background: rgba(255,71,87,0.08); border: 1px solid rgba(255,71,87,0.2); color: #ff6b7a; padding: 7px 9px; border-radius: 6px; font-size: 12px; cursor: pointer; }
 .btn-del:hover { background: rgba(255,71,87,0.2); }
+.btn-edit-player { background: rgba(59,130,246,0.1); border: 1px solid rgba(59,130,246,0.3); color: #60a5fa; padding: 7px 9px; border-radius: 6px; font-size: 12px; cursor: pointer; }
+.btn-edit-player:hover { background: rgba(59,130,246,0.2); }
 .btn-move-cat { background: rgba(240,180,41,0.1); border: 1px solid rgba(240,180,41,0.3); color: var(--gold); padding: 7px 9px; border-radius: 6px; font-size: 12px; cursor: pointer; }
 .btn-move-cat:hover { background: rgba(240,180,41,0.2); }
+
+/* PIPELINE COMMENT */
+.pipe-comment-wrap { margin-top: 8px; border-top: 1px solid var(--border); padding-top: 8px; }
+.pipe-comment-label { font-size: 9px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; font-weight: 700; margin-bottom: 4px; }
+.pipe-comment-text { font-size: 11px; color: var(--muted); font-style: italic; line-height: 1.4; }
+.pipe-comment-input { width: 100%; background: rgba(255,255,255,0.04); border: 1px solid var(--border); color: var(--white); padding: 6px 8px; border-radius: 5px; font-size: 11px; font-family: 'Inter', sans-serif; outline: none; resize: none; min-height: 52px; }
+.pipe-comment-input:focus { border-color: rgba(0,200,83,0.3); }
+.pipe-comment-btn { margin-top: 5px; background: rgba(0,200,83,0.1); border: 1px solid rgba(0,200,83,0.3); color: var(--grass); padding: 4px 10px; border-radius: 5px; font-size: 10px; font-weight: 700; cursor: pointer; width: 100%; }
+
+/* CLUB PROFILE SECTION */
+.club-profiles-section { margin-top: 12px; border-top: 1px solid var(--border); padding-top: 12px; }
+.club-profiles-title { font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px; color: var(--muted); margin-bottom: 10px; display: flex; align-items: center; gap: 6px; }
+.club-profile-item { background: rgba(255,255,255,0.03); border: 1px solid rgba(240,180,41,0.15); border-radius: 8px; padding: 10px 12px; margin-bottom: 8px; }
+.club-profile-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+.club-profile-pos { font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 14px; color: var(--gold); }
+.club-profile-comment { font-size: 11px; color: var(--muted); line-height: 1.5; }
+.club-profile-comment-empty { font-size: 11px; color: rgba(140,160,192,0.4); font-style: italic; }
+.btn-add-profile-comment { background: none; border: none; color: var(--muted); font-size: 11px; cursor: pointer; padding: 2px 4px; }
+.btn-add-profile-comment:hover { color: var(--grass); }
+.btn-del-profile { background: none; border: none; color: rgba(255,71,87,0.5); font-size: 12px; cursor: pointer; }
+.btn-del-profile:hover { color: #ff6b7a; }
+.btn-add-profile-new { width: 100%; background: rgba(240,180,41,0.06); border: 1px dashed rgba(240,180,41,0.25); color: var(--gold); padding: 9px; border-radius: 7px; font-size: 12px; font-weight: 600; cursor: pointer; margin-top: 6px; }
+.btn-add-profile-new:hover { background: rgba(240,180,41,0.12); }
+
+/* PITCH IMPROVEMENTS */
+.pitch-wrap { background:
+  repeating-linear-gradient(
+    0deg,
+    rgba(0,0,0,0) 0px, rgba(0,0,0,0) 59px,
+    rgba(0,0,0,0.08) 59px, rgba(0,0,0,0.08) 60px
+  ),
+  linear-gradient(180deg,
+    #1b5e35 0%, #1e6b3d 12%,
+    #1b5e35 24%, #1e6b3d 36%,
+    #1b5e35 48%, #1e6b3d 60%,
+    #1b5e35 72%, #1e6b3d 84%,
+    #1b5e35 100%
+  );
+  border-radius: 12px 12px 0 0;
+  padding: 24px 32px;
+  border: 2px solid rgba(255,255,255,0.08);
+  min-height: 640px;
+  position: relative;
+  box-shadow: inset 0 0 60px rgba(0,0,0,0.3);
+}
+.pitch-wrap::before {
+  content: '';
+  position: absolute;
+  top: 50%; left: 15%; right: 15%;
+  height: 1px; background: rgba(255,255,255,0.12);
+}
+.pitch-wrap::after {
+  content: '';
+  position: absolute;
+  top: calc(50% - 60px); left: calc(50% - 60px);
+  width: 120px; height: 120px;
+  border-radius: 50%;
+  border: 1px solid rgba(255,255,255,0.12);
+}
+.pitch-grid { display: flex; flex-direction: column; min-height: 580px; gap: 0; }
+.pitch-row { display: flex; justify-content: space-around; align-items: center; flex: 1; padding: 10px 0; }
+.player-slot { display: flex; flex-direction: column; align-items: center; gap: 6px; cursor: pointer; min-width: 80px; }
+.player-slot .slot-circle { width: 62px; height: 62px; border-radius: 50%; border: 2px dashed rgba(255,255,255,0.35); background: rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center; font-size: 22px; transition: all 0.2s; position: relative; box-shadow: 0 2px 8px rgba(0,0,0,0.4); }
+.player-slot.filled .slot-circle { border: 2px solid #fff; background: rgba(0,200,83,0.25); box-shadow: 0 0 14px rgba(0,200,83,0.35), 0 2px 8px rgba(0,0,0,0.4); }
+.player-slot .slot-circle:hover { border-color: var(--grass); background: rgba(0,200,83,0.15); }
+.player-slot .slot-name { font-family: 'Barlow Condensed', sans-serif; font-weight: 900; font-size: 13px; color: #fff; text-shadow: 0 1px 4px rgba(0,0,0,0.9), 0 0 8px rgba(0,0,0,0.8); text-align: center; max-width: 80px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; letter-spacing: 0.5px; }
+.player-slot .slot-pos { font-size: 9px; color: rgba(255,255,255,0.7); text-transform: uppercase; letter-spacing: 1.5px; font-weight: 700; background: rgba(0,0,0,0.4); padding: 1px 6px; border-radius: 8px; }
 
 /* CLUB CARD */
 .club-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 10px; padding: 18px; cursor: grab; transition: border-color 0.2s, transform 0.15s; position: relative; overflow: hidden; }
@@ -934,7 +1003,7 @@ main { max-width: 1400px; margin: 0 auto; padding: 28px 24px; }
 <div class="modal-overlay" id="player-modal">
   <div class="modal">
     <button class="modal-close" onclick="closeModal('player-modal')">✕</button>
-    <div class="modal-title">Ajouter Joueur</div>
+    <div class="modal-title" id="player-modal-title">Ajouter Joueur</div>
     <div class="modal-sub">Remplissez les détails du joueur</div>
     <div class="form-row">
       <div class="fg"><label>Nom complet *</label><input type="text" id="pm-name" placeholder="ex. Karim Benzema"></div>
@@ -962,7 +1031,7 @@ main { max-width: 1400px; margin: 0 auto; padding: 28px 24px; }
     <label>Objectif de transfert</label><input type="text" id="pm-target" placeholder="ex. Chercher un club de Ligue 2">
     <div class="modal-footer">
       <button class="btn-cancel" onclick="closeModal('player-modal')">Annuler</button>
-      <button class="btn-save" onclick="savePlayer()">Sauvegarder</button>
+      <button class="btn-save" id="pm-save-btn" onclick="savePlayer()">Sauvegarder</button>
     </div>
   </div>
 </div>
@@ -1044,10 +1113,11 @@ main { max-width: 1400px; margin: 0 auto; padding: 28px 24px; }
 
 <!-- PIPELINE STEP MODAL -->
 <div class="modal-overlay" id="pipeline-step-modal">
-  <div class="modal" style="max-width:420px">
+  <div class="modal" style="max-width:440px;border-color:rgba(0,200,83,0.2)">
     <button class="modal-close" onclick="closeModal('pipeline-step-modal')">✕</button>
-    <div class="modal-title">Changer le Statut</div>
-    <div class="modal-sub" id="pipe-modal-player" style="color:var(--grass);margin-bottom:16px"></div>
+    <div class="modal-title">🔄 Statut Pipeline</div>
+    <div style="font-size:13px;color:var(--grass);font-weight:600;margin-bottom:18px" id="pipe-modal-player"></div>
+    <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px">Sélectionne l'étape actuelle</div>
     <div class="step-picker" id="step-picker"></div>
   </div>
 </div>
@@ -1069,6 +1139,19 @@ main { max-width: 1400px; margin: 0 auto; padding: 28px 24px; }
     <div class="modal-footer">
       <button class="btn-cancel" onclick="closeModal('scout-modal')">Annuler</button>
       <button class="btn-save" style="background:var(--purple);color:#fff" onclick="saveScoutReport()">Enregistrer le rapport</button>
+    </div>
+  </div>
+</div>
+
+<!-- PROFILE COMMENT MODAL -->
+<div class="mini-overlay" id="profile-comment-modal">
+  <div class="mini-modal" style="max-width:380px">
+    <div class="mini-title">✏️ Caractéristiques du profil</div>
+    <div style="font-size:11px;color:var(--muted);margin-bottom:10px">Décris l'âge, la taille, le pied, les qualités attendues…</div>
+    <textarea id="profile-comment-input" style="width:100%;background:var(--pitch);border:1px solid var(--border);color:var(--white);padding:10px 12px;border-radius:6px;font-size:13px;font-family:'Inter',sans-serif;outline:none;resize:vertical;min-height:90px" placeholder="ex. U23, 1m85+, Pied gauche, Bon jeu aérien, Budget max 500k…"></textarea>
+    <div class="mini-footer">
+      <button onclick="closeModal('profile-comment-modal')" style="flex:1;background:transparent;border:1px solid var(--border);color:var(--muted);padding:9px;border-radius:6px;cursor:pointer;font-size:13px">Annuler</button>
+      <button onclick="saveProfileComment()" style="flex:2;background:var(--gold);border:none;color:#000;padding:9px;border-radius:6px;font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:14px;cursor:pointer">Enregistrer</button>
     </div>
   </div>
 </div>
@@ -1395,7 +1478,23 @@ function getStepByKey(key) { return PIPE_STEPS.find(s => s.key === key) || PIPE_
 function stepBadgeHTML(id) {
   const idx = getPipeIndex(id);
   const step = PIPE_STEPS[idx];
-  return `<span class="step-badge step-${idx}" onclick="openPipeStepModal('${id}')" title="Cliquer pour changer">${step.icon} ${step.label}</span>`;
+  const colors = ['rgba(140,160,192,0.15)','rgba(59,130,246,0.15)','rgba(168,85,247,0.15)','rgba(249,115,22,0.15)','rgba(240,180,41,0.15)','rgba(0,200,83,0.15)'];
+  const borders = ['var(--border)','rgba(59,130,246,0.35)','rgba(168,85,247,0.35)','rgba(249,115,22,0.35)','rgba(240,180,41,0.35)','rgba(0,200,83,0.35)'];
+  const textColors = ['var(--muted)','#60a5fa','#c084fc','#fb923c','var(--gold)','var(--grass)'];
+  return `<button onclick="openPipeStepModal('${id}')" style="
+    display:flex;align-items:center;gap:6px;width:100%;
+    background:${colors[idx]||colors[0]};
+    border:1px solid ${borders[idx]||borders[0]};
+    color:${textColors[idx]||textColors[0]};
+    padding:8px 12px;border-radius:7px;cursor:pointer;
+    font-size:12px;font-weight:700;font-family:'Barlow Condensed',sans-serif;
+    letter-spacing:0.5px;text-transform:uppercase;
+    transition:opacity 0.15s;margin-bottom:8px;
+  " title="Changer le statut pipeline">
+    <span style="font-size:15px">${step.icon}</span>
+    <span>${step.label}</span>
+    <span style="margin-left:auto;font-size:10px;opacity:0.6">Changer →</span>
+  </button>`;
 }
 const SCOUT_CRITERIA = [
   { key:'tech',   label:'Technique',        color:'#818cf8' },
@@ -1477,6 +1576,7 @@ function renderPlayers(){
         ${p.video?`<a class="btn-video" href="${p.video}" target="_blank">▶ Vidéo</a>`:''}
         <button class="btn-scout" onclick="openScoutModal('${p.id}')">🎯 Scout</button>
         <button class="btn-request" onclick="openRequest(event,'${p.id}')">✉</button>
+        <button class="btn-edit-player" onclick="openEditPlayerModal('${p.id}')" title="Modifier">✏️</button>
         <button class="btn-move-cat" onclick="openMoveCatModal('${p.id}','player')" title="Changer de catégorie">📂</button>
         ${isCustom?`<button class="btn-del" onclick="deletePlayer(event,'${p.id}')">🗑</button>`:''}
       </div>
@@ -1485,17 +1585,49 @@ function renderPlayers(){
   updateStats();
 }
 
+// ── EDIT PLAYER (supports both add and edit) ──
+let editingPlayerId = null;
+
 function openPlayerModal(){
+  editingPlayerId = null;
+  document.getElementById('player-modal-title').textContent = 'Ajouter Joueur';
+  document.getElementById('pm-save-btn').textContent = 'Sauvegarder';
   ['pm-name','pm-year','pm-nat','pm-pos','pm-club','pm-league','pm-country','pm-height','pm-agent','pm-dob','pm-tm','pm-video','pm-comment','pm-target'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('player-modal').classList.add('open');
 }
+
+function openEditPlayerModal(id) {
+  const p = allPlayers().find(x=>x.id===id);
+  if (!p) return;
+  editingPlayerId = id;
+  document.getElementById('player-modal-title').textContent = 'Modifier Joueur';
+  document.getElementById('pm-save-btn').textContent = 'Enregistrer les modifications';
+  document.getElementById('pm-name').value    = p.name || '';
+  document.getElementById('pm-year').value    = p.year || '';
+  document.getElementById('pm-nat').value     = p.nationality || '';
+  document.getElementById('pm-pos').value     = p.position || '';
+  document.getElementById('pm-club').value    = p.club !== '—' ? p.club : '';
+  document.getElementById('pm-league').value  = p.league !== '—' ? p.league : '';
+  document.getElementById('pm-country').value = p.country !== '—' ? p.country : '';
+  document.getElementById('pm-height').value  = p.height !== 'N/A' ? p.height : '';
+  document.getElementById('pm-agent').value   = p.agent !== '—' ? p.agent : '';
+  document.getElementById('pm-dob').value     = p.dob || '';
+  document.getElementById('pm-tm').value      = p.tm || '';
+  document.getElementById('pm-video').value   = p.video || '';
+  document.getElementById('pm-comment').value = p.comment || '';
+  document.getElementById('pm-target').value  = p.target || '';
+  document.getElementById('player-modal').classList.add('open');
+}
+
 function savePlayer(){
   const name=document.getElementById('pm-name').value.trim();
   const year=parseInt(document.getElementById('pm-year').value);
   const nat=document.getElementById('pm-nat').value.trim();
   const pos=document.getElementById('pm-pos').value.trim();
   if(!name||!year||!nat||!pos){alert('Remplissez nom, année, nationalité et poste.');return;}
-  const p={id:uid(),name,year,nationality:nat,position:pos,
+
+  const fields = {
+    name, year, nationality:nat, position:pos,
     dob:document.getElementById('pm-dob').value.trim(),
     height:document.getElementById('pm-height').value.trim()||'N/A',
     club:document.getElementById('pm-club').value.trim()||'—',
@@ -1505,11 +1637,31 @@ function savePlayer(){
     tm:document.getElementById('pm-tm').value.trim(),
     video:document.getElementById('pm-video').value.trim(),
     comment:document.getElementById('pm-comment').value.trim(),
-    target:document.getElementById('pm-target').value.trim()};
-  customPlayers.push(p);
-  saveAll(); closeModal('player-modal'); renderPlayers(); renderCatList('player');
-  showToast(`${name} ajouté ✓`);
+    target:document.getElementById('pm-target').value.trim()
+  };
+
+  if (editingPlayerId) {
+    // Edit existing
+    const idx = customPlayers.findIndex(x=>x.id===editingPlayerId);
+    if (idx>=0) {
+      customPlayers[idx] = {...customPlayers[idx], ...fields};
+    } else {
+      // Static player — store override in localStorage
+      let overrides = JSON.parse(localStorage.getItem('playerOverrides')||'{}');
+      overrides[editingPlayerId] = fields;
+      localStorage.setItem('playerOverrides', JSON.stringify(overrides));
+    }
+    saveAll(); closeModal('player-modal'); renderPlayers();
+    showToast(`${name} modifié ✓`);
+  } else {
+    // Add new
+    customPlayers.push({id:uid(), ...fields});
+    saveAll(); closeModal('player-modal'); renderPlayers(); renderCatList('player');
+    showToast(`${name} ajouté ✓`);
+  }
+  editingPlayerId = null;
 }
+
 function deletePlayer(e,id){
   e.stopPropagation();
   const p=allPlayers().find(x=>x.id===id);
@@ -1542,24 +1694,47 @@ function renderClubs(){
   grid.innerHTML=list.map(c=>{
     const cc=FLAG_CODES[c.country];
     const cflag=cc?`<span style="font-size:14px" title="${c.country}">${flagEmoji(cc)}</span>`:'';
+    const profiles = c.profiles || [];
     return `<div class="club-card" data-id="${c.id}" draggable="true"
       ondragstart="onDragStart(event,'${c.id}','club')"
       ondragend="onDragEnd(event)">
       <div class="club-card-header">
         <div class="club-card-logo">🏟️</div>
-        <div>
+        <div style="flex:1;min-width:0">
           <div class="club-card-name">${c.name}</div>
           ${c.league?`<div class="club-card-league">${c.league}</div>`:''}
           ${c.country?`<div class="club-card-country">${cflag} ${c.country}</div>`:''}
           ${c.contact?`<div style="font-size:11px;color:var(--muted);margin-top:2px">👤 ${c.contact}</div>`:''}
         </div>
+        <div style="display:flex;gap:5px;flex-shrink:0">
+          <button class="btn-move-cat" onclick="openMoveCatModal('${c.id}','club')" title="Changer catégorie">📂</button>
+          <button class="btn-del-club" onclick="deleteClub('${c.id}')">🗑</button>
+        </div>
       </div>
       ${c.notes?`<div class="card-comment" style="margin-bottom:10px">${c.notes}</div>`:''}
-      <div class="profiles-label">Profils recherchés</div>
-      <div class="profiles-list">${c.profiles&&c.profiles.length?c.profiles.map((pr,pi)=>`<span class="profile-tag">${pr}<button onclick="deleteProfile('${c.id}',${pi})">✕</button></span>`).join(''):'<span style="font-size:11px;color:var(--muted)">Aucun profil</span>'}</div>
-      <div class="club-card-actions">
-        <button class="btn-add-profile" onclick="openProfileMini('${c.id}')">+ Profil</button>
-        <button class="btn-del-club" onclick="deleteClub('${c.id}')">🗑</button>
+
+      <!-- PROFILS RECHERCHÉS -->
+      <div class="club-profiles-section">
+        <div class="club-profiles-title">🎯 Profils recherchés
+          <span style="margin-left:auto;font-size:10px;color:var(--muted);font-weight:400">${profiles.length} profil${profiles.length!==1?'s':''}</span>
+        </div>
+        ${profiles.length ? profiles.map((pr, pi) => {
+          const pos = typeof pr === 'object' ? pr.pos : pr;
+          const comment = typeof pr === 'object' ? (pr.comment||'') : '';
+          return `<div class="club-profile-item">
+            <div class="club-profile-header">
+              <span class="club-profile-pos">📌 ${pos}</span>
+              <div style="display:flex;gap:4px">
+                <button class="btn-add-profile-comment" onclick="editProfileComment('${c.id}',${pi})" title="Ajouter commentaire">✏️</button>
+                <button class="btn-del-profile" onclick="deleteProfile('${c.id}',${pi})">✕</button>
+              </div>
+            </div>
+            <div class="club-profile-comment" id="pc-${c.id}-${pi}">
+              ${comment ? comment : '<span class="club-profile-comment-empty">Ajouter des caractéristiques (âge, taille, pied…)</span>'}
+            </div>
+          </div>`;
+        }).join('') : '<div style="font-size:11px;color:var(--muted);font-style:italic;padding:4px 0">Aucun profil défini</div>'}
+        <button class="btn-add-profile-new" onclick="openProfileMini('${c.id}')">+ Ajouter un profil</button>
       </div>
     </div>`;
   }).join('');
@@ -1588,11 +1763,38 @@ function saveProfile(){
   const val=document.getElementById('profile-input').value.trim(); if(!val) return;
   const c=clubs.find(x=>x.id===pendingClubId); if(!c) return;
   if(!c.profiles) c.profiles=[];
-  c.profiles.push(val); saveAll(); closeModal('profile-mini'); renderClubs();
+  c.profiles.push({pos:val, comment:''}); saveAll(); closeModal('profile-mini'); renderClubs();
 }
 function deleteProfile(clubId,pi){
   const c=clubs.find(x=>x.id===clubId); if(!c) return;
   c.profiles.splice(pi,1); saveAll(); renderClubs();
+}
+
+// Edit profile comment inline
+let editingProfileClub=null, editingProfileIdx=null;
+function editProfileComment(clubId, pi) {
+  editingProfileClub=clubId; editingProfileIdx=pi;
+  const c=clubs.find(x=>x.id===clubId); if(!c) return;
+  const pr=c.profiles[pi]; const comment=typeof pr==='object'?pr.comment:'';
+  document.getElementById('profile-comment-input').value=comment;
+  document.getElementById('profile-comment-modal').classList.add('open');
+  setTimeout(()=>document.getElementById('profile-comment-input').focus(),100);
+}
+function saveProfileComment(){
+  if(editingProfileClub===null) return;
+  const c=clubs.find(x=>x.id===editingProfileClub); if(!c) return;
+  const pr=c.profiles[editingProfileIdx];
+  const pos=typeof pr==='object'?pr.pos:pr;
+  c.profiles[editingProfileIdx]={pos, comment:document.getElementById('profile-comment-input').value.trim()};
+  saveAll(); closeModal('profile-comment-modal'); renderClubs();
+}
+
+// Pipeline comments
+let pipeComments = JSON.parse(localStorage.getItem('pipeComments')||'{}');
+function savePipeComments(){ localStorage.setItem('pipeComments', JSON.stringify(pipeComments)); }
+function getPipeComment(id){ return pipeComments[id]||''; }
+function savePipeCommentForPlayer(id, text){
+  pipeComments[id]=text; savePipeComments(); renderPipeline();
 }
 
 // ==============================
@@ -1937,6 +2139,11 @@ function renderPipeline() {
             const flagE = flagEmoji(FLAG_CODES[p.nationality]||'');
             const prevStep = PIPE_STEPS[si-1];
             const nextStep = PIPE_STEPS[si+1];
+            const pipeComment = getPipeComment(p.id);
+            const commentLabel = step.key==='video'?'🎬 Club contacté / Vidéo envoyée à':
+                                  step.key==='essai'?'🏃 Club essai':
+                                  step.key==='nego'?'💬 Négociation avec':
+                                  step.key==='signe'?'✅ Contrat signé avec':'📝 Note';
             return `<div class="pipe-card" data-pid="${p.id}" draggable="true"
               ondragstart="pipeDragStart(event,'${p.id}')"
               ondragend="pipeDragEnd(event)">
@@ -1945,6 +2152,15 @@ function renderPipeline() {
               <div class="pipe-card-tags">
                 ${p.tm ? `<a href="${p.tm}" target="_blank" class="pipe-tag" style="background:rgba(12,83,184,0.15);color:#6ba3ff;border:1px solid rgba(12,83,184,0.4);text-decoration:none">🔗 TM</a>` : ''}
                 ${p.video ? `<a href="${p.video}" target="_blank" class="pipe-tag" style="background:rgba(255,71,87,0.1);color:#ff6b7a;border:1px solid rgba(255,71,87,0.3);text-decoration:none">▶ Vidéo</a>` : ''}
+              </div>
+              <div class="pipe-comment-wrap">
+                <div class="pipe-comment-label">${commentLabel}</div>
+                ${pipeComment
+                  ? `<div class="pipe-comment-text">${pipeComment}</div>
+                     <button class="pipe-comment-btn" onclick="editPipeComment('${p.id}')">✏️ Modifier</button>`
+                  : `<textarea class="pipe-comment-input" id="pci-${p.id}" placeholder="ex. SC Bastia, Ligue 2…" rows="2"></textarea>
+                     <button class="pipe-comment-btn" onclick="savePipeCommentInline('${p.id}')">💾 Enregistrer</button>`
+                }
               </div>
               <div class="pipe-card-move">
                 ${prevStep ? `<button class="pipe-move-btn back" onclick="movePlayer('${p.id}','${prevStep.key}')">← ${prevStep.icon}</button>` : '<span></span>'}
@@ -1966,6 +2182,16 @@ function pipeDragStart(e, id) {
 function pipeDragEnd(e) {
   document.querySelectorAll('.pipe-card.dragging').forEach(el => el.classList.remove('dragging'));
   pipeDragId = null;
+}
+function savePipeCommentInline(id) {
+  const el = document.getElementById('pci-'+id);
+  if (!el) return;
+  pipeComments[id] = el.value.trim();
+  savePipeComments(); renderPipeline();
+}
+function editPipeComment(id) {
+  pipeComments[id] = '';
+  savePipeComments(); renderPipeline();
 }
 function pipeDragOver(e, stepKey) {
   e.preventDefault();
@@ -2666,7 +2892,7 @@ function updateStats(){
 ['player-modal','club-modal','request-modal','pipeline-step-modal','scout-modal'].forEach(id=>{
   document.getElementById(id).addEventListener('click',e=>{ if(e.target===e.currentTarget) closeModal(id); });
 });
-['profile-mini','cat-mini','move-cat-modal'].forEach(id=>{
+['profile-mini','cat-mini','move-cat-modal','profile-comment-modal'].forEach(id=>{
   document.getElementById(id).addEventListener('click',e=>{ if(e.target===e.currentTarget) closeModal(id); });
 });
 document.getElementById('player-picker').addEventListener('click',e=>{ if(e.target===e.currentTarget) closePicker(); });
