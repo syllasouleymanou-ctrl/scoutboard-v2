@@ -97,6 +97,8 @@ main { max-width: 1400px; margin: 0 auto; padding: 28px 24px; }
 .btn-request:hover { background: rgba(0,200,83,0.2); }
 .btn-del { background: rgba(255,71,87,0.08); border: 1px solid rgba(255,71,87,0.2); color: #ff6b7a; padding: 7px 9px; border-radius: 6px; font-size: 12px; cursor: pointer; }
 .btn-del:hover { background: rgba(255,71,87,0.2); }
+.btn-move-cat { background: rgba(240,180,41,0.1); border: 1px solid rgba(240,180,41,0.3); color: var(--gold); padding: 7px 9px; border-radius: 6px; font-size: 12px; cursor: pointer; }
+.btn-move-cat:hover { background: rgba(240,180,41,0.2); }
 
 /* CLUB CARD */
 .club-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 10px; padding: 18px; cursor: grab; transition: border-color 0.2s, transform 0.15s; position: relative; overflow: hidden; }
@@ -1071,6 +1073,18 @@ main { max-width: 1400px; margin: 0 auto; padding: 28px 24px; }
   </div>
 </div>
 
+<!-- MOVE CATEGORY MODAL -->
+<div class="mini-overlay" id="move-cat-modal">
+  <div class="mini-modal" style="max-width:360px">
+    <div class="mini-title" style="color:var(--gold)">📂 Déplacer vers une catégorie</div>
+    <div id="move-cat-item-name" style="font-size:12px;color:var(--muted);margin-bottom:14px"></div>
+    <div id="move-cat-options" style="display:flex;flex-direction:column;gap:7px;max-height:60vh;overflow-y:auto"></div>
+    <div style="margin-top:12px">
+      <button onclick="closeModal('move-cat-modal')" style="width:100%;background:transparent;border:1px solid var(--border);color:var(--muted);padding:9px;border-radius:6px;cursor:pointer;font-size:13px">Annuler</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -1237,6 +1251,57 @@ function renderCatList(type){
       <span>${c.label} <span class="cat-count">${counts[c.id]||0}</span></span>
       ${c.deletable?`<button class="cat-delete" onclick="event.stopPropagation();deleteCat('${type}','${c.id}')">✕</button>`:''}
     </div>`).join('');
+}
+
+// ── MOVE CATEGORY (bouton 📂 sur chaque carte) ──
+let moveCatId = null, moveCatType = null;
+
+function openMoveCatModal(id, type) {
+  moveCatId = id; moveCatType = type;
+  const cats = type === 'player' ? playerCats : clubCats;
+  const assign = type === 'player' ? playerCatAssign : clubCatAssign;
+  const currentCat = assign[id] || (type === 'player' ? 'p_all' : 'c_all');
+  // Label
+  let name = '';
+  if (type === 'player') { const p = allPlayers().find(x=>x.id===id); name = p ? p.name : ''; }
+  else { const c = clubs.find(x=>x.id===id); name = c ? c.name : ''; }
+  document.getElementById('move-cat-item-name').textContent = name;
+  // Options
+  document.getElementById('move-cat-options').innerHTML = cats.map(cat => {
+    const active = cat.id === currentCat;
+    return `<button onclick="assignCat('${cat.id}')" style="
+      display:flex;align-items:center;justify-content:space-between;
+      width:100%;padding:12px 14px;border-radius:8px;cursor:pointer;text-align:left;
+      background:${active?'rgba(0,200,83,0.1)':'rgba(255,255,255,0.03)'};
+      border:1px solid ${active?'rgba(0,200,83,0.35)':'var(--border)'};
+      color:${active?'var(--grass)':'var(--white)'};
+      font-size:13px;font-weight:600;font-family:'Inter',sans-serif;">
+      <span>${cat.label}</span>
+      ${active?'<span style="font-size:16px">✓</span>':''}
+    </button>`;
+  }).join('');
+  document.getElementById('move-cat-modal').classList.add('open');
+}
+
+function assignCat(catId) {
+  if (!moveCatId) return;
+  if (moveCatType === 'player') {
+    playerCatAssign[moveCatId] = catId;
+    saveAll();
+    closeModal('move-cat-modal');
+    renderCatList('player');
+    renderPlayers();
+  } else {
+    clubCatAssign[moveCatId] = catId;
+    saveAll();
+    closeModal('move-cat-modal');
+    renderCatList('club');
+    renderClubs();
+  }
+  const cats = moveCatType === 'player' ? playerCats : clubCats;
+  const catName = cats.find(c=>c.id===catId)?.label || '';
+  showToast(`Déplacé → ${catName}`);
+  moveCatId = null; moveCatType = null;
 }
 
 function setCat(type, id){
@@ -1412,6 +1477,7 @@ function renderPlayers(){
         ${p.video?`<a class="btn-video" href="${p.video}" target="_blank">▶ Vidéo</a>`:''}
         <button class="btn-scout" onclick="openScoutModal('${p.id}')">🎯 Scout</button>
         <button class="btn-request" onclick="openRequest(event,'${p.id}')">✉</button>
+        <button class="btn-move-cat" onclick="openMoveCatModal('${p.id}','player')" title="Changer de catégorie">📂</button>
         ${isCustom?`<button class="btn-del" onclick="deletePlayer(event,'${p.id}')">🗑</button>`:''}
       </div>
     </div>`;
@@ -2600,7 +2666,7 @@ function updateStats(){
 ['player-modal','club-modal','request-modal','pipeline-step-modal','scout-modal'].forEach(id=>{
   document.getElementById(id).addEventListener('click',e=>{ if(e.target===e.currentTarget) closeModal(id); });
 });
-['profile-mini','cat-mini'].forEach(id=>{
+['profile-mini','cat-mini','move-cat-modal'].forEach(id=>{
   document.getElementById(id).addEventListener('click',e=>{ if(e.target===e.currentTarget) closeModal(id); });
 });
 document.getElementById('player-picker').addEventListener('click',e=>{ if(e.target===e.currentTarget) closePicker(); });
