@@ -1,0 +1,2325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ScoutBoard — Agent Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;900&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --pitch: #0a1628; --pitch-mid: #0f1f3d; --pitch-light: #162952;
+  --grass: #00c853; --grass-dim: #00843a; --gold: #f0b429;
+  --white: #f0f4ff; --muted: #8ca0c0; --card-bg: #0d1e3a;
+  --border: rgba(255,255,255,0.07); --red: #e53e3e; --purple: #a855f7;
+}
+body { background: var(--pitch); color: var(--white); font-family: 'Inter', sans-serif; min-height: 100vh; }
+
+/* HEADER */
+header { background: var(--pitch-mid); border-bottom: 2px solid var(--grass-dim); padding: 0 32px; display: flex; align-items: center; justify-content: space-between; height: 64px; position: sticky; top: 0; z-index: 100; }
+.logo { font-family: 'Barlow Condensed', sans-serif; font-weight: 900; font-size: 22px; letter-spacing: 2px; text-transform: uppercase; display: flex; align-items: center; gap: 10px; }
+.logo-dot { width: 10px; height: 10px; background: var(--grass); border-radius: 50%; }
+.header-stats { display: flex; gap: 24px; }
+.hstat .num { font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 20px; color: var(--grass); line-height: 1; text-align:center; }
+.hstat .lbl { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; text-align:center; }
+
+/* MAIN TABS */
+.tabs-bar { background: var(--pitch-mid); border-bottom: 1px solid var(--border); padding: 0 32px; display: flex; gap: 4px; overflow-x: auto; }
+.tab-btn { background: transparent; border: none; color: var(--muted); font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 14px; letter-spacing: 1.5px; text-transform: uppercase; padding: 14px 20px; cursor: pointer; border-bottom: 3px solid transparent; transition: color 0.2s, border-color 0.2s; white-space: nowrap; }
+.tab-btn:hover { color: var(--white); }
+.tab-btn.active { color: var(--grass); border-bottom-color: var(--grass); }
+
+/* MAIN */
+main { max-width: 1400px; margin: 0 auto; padding: 28px 24px; }
+.tab-panel { display: none; }
+.tab-panel.active { display: block; }
+
+/* CATEGORY LAYOUT */
+.page-layout { display: flex; gap: 20px; align-items: flex-start; }
+.categories-sidebar { width: 200px; flex-shrink: 0; }
+.categories-sidebar h3 { font-family: 'Barlow Condensed', sans-serif; font-size: 11px; letter-spacing: 2px; text-transform: uppercase; color: var(--muted); margin-bottom: 10px; }
+.cat-list { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; }
+.cat-item { display: flex; align-items: center; justify-content: space-between; padding: 9px 12px; border-radius: 8px; cursor: pointer; border: 1px solid var(--border); background: var(--card-bg); transition: all 0.15s; font-size: 13px; font-weight: 500; color: var(--muted); user-select: none; }
+.cat-item:hover { border-color: rgba(0,200,83,0.3); color: var(--white); }
+.cat-item.active { border-color: var(--grass); color: var(--white); background: rgba(0,200,83,0.08); }
+.cat-item.archive-cat.active { border-color: var(--muted); background: rgba(140,160,192,0.1); }
+.cat-item .cat-icon { margin-right: 7px; }
+.cat-count { background: rgba(255,255,255,0.08); border-radius: 10px; padding: 1px 7px; font-size: 10px; font-weight: 600; }
+.cat-item.active .cat-count { background: rgba(0,200,83,0.2); }
+.btn-add-cat { width: 100%; background: transparent; border: 1px dashed rgba(255,255,255,0.15); color: var(--muted); padding: 8px 12px; border-radius: 8px; font-size: 12px; cursor: pointer; transition: all 0.15s; text-align: left; }
+.btn-add-cat:hover { border-color: var(--grass); color: var(--grass); }
+.cat-delete { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 13px; opacity: 0; transition: opacity 0.15s; padding: 0 2px; }
+.cat-item:hover .cat-delete { opacity: 1; }
+
+/* MAIN CONTENT AREA */
+.content-area { flex: 1; min-width: 0; }
+.content-top { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; align-items: center; }
+.search-wrap { flex: 1; min-width: 200px; position: relative; }
+.search-wrap input { width: 100%; background: var(--card-bg); border: 1px solid var(--border); color: var(--white); padding: 10px 16px 10px 38px; border-radius: 6px; font-size: 14px; font-family: 'Inter', sans-serif; outline: none; }
+.search-wrap input::placeholder { color: var(--muted); }
+.search-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--muted); }
+.section-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+.section-title { font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 14px; text-transform: uppercase; letter-spacing: 2px; color: var(--muted); }
+.count-badge { background: var(--pitch-light); border: 1px solid var(--border); color: var(--muted); font-size: 12px; padding: 3px 10px; border-radius: 20px; }
+
+/* GRID */
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 14px; min-height: 120px; }
+.grid.drag-over { outline: 2px dashed rgba(0,200,83,0.4); outline-offset: 4px; border-radius: 10px; }
+
+/* PLAYER CARD */
+.player-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 10px; padding: 18px; transition: border-color 0.2s, transform 0.15s, box-shadow 0.15s; position: relative; overflow: hidden; cursor: grab; }
+.player-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: var(--grass-dim); opacity: 0; transition: opacity 0.2s; }
+.player-card:hover { border-color: rgba(0,200,83,0.3); transform: translateY(-2px); }
+.player-card:hover::before { opacity: 1; }
+.player-card.dragging { opacity: 0.4; cursor: grabbing; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+.card-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
+.card-top-left { display: flex; align-items: flex-start; gap: 10px; flex: 1; min-width: 0; }
+.club-logo-wrap { width: 38px; height: 38px; flex-shrink: 0; background: rgba(255,255,255,0.05); border: 1px solid var(--border); border-radius: 8px; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+.club-logo-wrap img { width: 30px; height: 30px; object-fit: contain; }
+.player-name { font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 19px; color: var(--white); line-height: 1.1; }
+.player-pos { font-size: 11px; color: var(--muted); margin-top: 2px; }
+.badges { display: flex; flex-direction: column; gap: 3px; align-items: flex-end; flex-shrink: 0; }
+.badge { font-size: 10px; font-weight: 600; padding: 2px 7px; border-radius: 4px; text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap; }
+.badge-year { background: rgba(240,180,41,0.15); color: var(--gold); border: 1px solid rgba(240,180,41,0.3); }
+.badge-nat { background: rgba(0,200,83,0.1); color: var(--grass); border: 1px solid rgba(0,200,83,0.2); display: flex; align-items: center; gap: 4px; }
+.flag-img { width: 15px; height: 11px; object-fit: cover; border-radius: 2px; }
+.card-meta { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 12px; }
+.meta-item { background: rgba(255,255,255,0.03); border-radius: 6px; padding: 7px 9px; }
+.meta-label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 1px; }
+.meta-val { font-size: 12px; font-weight: 500; color: var(--white); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.card-comment { font-size: 11px; color: var(--muted); background: rgba(255,255,255,0.03); border-left: 2px solid var(--grass-dim); padding: 6px 9px; border-radius: 0 5px 5px 0; margin-bottom: 12px; line-height: 1.5; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.card-actions { display: flex; gap: 6px; }
+.btn-tm { flex:1; background: rgba(12,83,184,0.2); border: 1px solid rgba(12,83,184,0.5); color: #6ba3ff; padding: 7px 10px; border-radius: 6px; font-size: 11px; font-weight: 600; cursor: pointer; text-decoration: none; text-align: center; display: flex; align-items: center; justify-content: center; gap: 4px; }
+.btn-tm:hover { background: rgba(12,83,184,0.4); }
+.btn-video { flex:1; background: rgba(255,71,87,0.1); border: 1px solid rgba(255,71,87,0.3); color: #ff6b7a; padding: 7px 10px; border-radius: 6px; font-size: 11px; font-weight: 600; cursor: pointer; text-decoration: none; text-align: center; display: flex; align-items: center; justify-content: center; gap: 4px; }
+.btn-video:hover { background: rgba(255,71,87,0.25); }
+.btn-request { background: rgba(0,200,83,0.1); border: 1px solid rgba(0,200,83,0.3); color: var(--grass); padding: 7px 10px; border-radius: 6px; font-size: 11px; font-weight: 600; cursor: pointer; }
+.btn-request:hover { background: rgba(0,200,83,0.2); }
+.btn-del { background: rgba(255,71,87,0.08); border: 1px solid rgba(255,71,87,0.2); color: #ff6b7a; padding: 7px 9px; border-radius: 6px; font-size: 12px; cursor: pointer; }
+.btn-del:hover { background: rgba(255,71,87,0.2); }
+
+/* CLUB CARD */
+.club-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 10px; padding: 18px; cursor: grab; transition: border-color 0.2s, transform 0.15s; position: relative; overflow: hidden; }
+.club-card:hover { border-color: rgba(240,180,41,0.3); transform: translateY(-2px); }
+.club-card.dragging { opacity: 0.4; cursor: grabbing; }
+.club-card-header { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+.club-card-logo { width: 44px; height: 44px; background: rgba(255,255,255,0.05); border: 1px solid var(--border); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0; }
+.club-card-name { font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 18px; }
+.club-card-league { font-size: 12px; color: var(--muted); }
+.club-card-country { display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--muted); margin-top: 3px; }
+.profiles-label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; font-weight: 600; }
+.profiles-list { display: flex; flex-wrap: wrap; gap: 5px; min-height: 24px; }
+.profile-tag { background: rgba(240,180,41,0.12); border: 1px solid rgba(240,180,41,0.3); color: var(--gold); font-size: 11px; font-weight: 600; padding: 3px 9px; border-radius: 20px; display: flex; align-items: center; gap: 5px; }
+.profile-tag button { background: none; border: none; color: var(--gold); cursor: pointer; font-size: 11px; padding: 0; opacity: 0.6; }
+.profile-tag button:hover { opacity: 1; }
+.club-card-actions { display: flex; gap: 6px; margin-top: 12px; }
+.btn-add-profile { flex:1; background: rgba(240,180,41,0.1); border: 1px solid rgba(240,180,41,0.3); color: var(--gold); padding: 7px 10px; border-radius: 6px; font-size: 11px; font-weight: 600; cursor: pointer; }
+.btn-add-profile:hover { background: rgba(240,180,41,0.2); }
+.btn-del-club { background: rgba(255,71,87,0.08); border: 1px solid rgba(255,71,87,0.2); color: #ff6b7a; padding: 7px 9px; border-radius: 6px; font-size: 12px; cursor: pointer; }
+
+/* EMPTY STATE */
+.empty { text-align: center; padding: 50px 20px; color: var(--muted); font-size: 14px; grid-column: 1/-1; border: 2px dashed rgba(255,255,255,0.07); border-radius: 10px; }
+.empty-icon { font-size: 36px; margin-bottom: 10px; }
+
+/* BUTTONS */
+.btn-primary { background: var(--grass); color: #000; border: none; padding: 9px 18px; border-radius: 6px; font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 14px; letter-spacing: 1px; text-transform: uppercase; cursor: pointer; white-space: nowrap; }
+.btn-primary:hover { background: #00e65c; }
+.btn-gold { background: var(--gold); color: #000; border: none; padding: 9px 18px; border-radius: 6px; font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 14px; letter-spacing: 1px; text-transform: uppercase; cursor: pointer; }
+.btn-gold:hover { background: #f7c948; }
+
+/* TODO */
+.todo-wrap { max-width: 700px; }
+.todo-add { display: flex; gap: 10px; margin-bottom: 24px; }
+.todo-add input { flex:1; background: var(--card-bg); border: 1px solid var(--border); color: var(--white); padding: 11px 14px; border-radius: 8px; font-size: 14px; font-family: 'Inter', sans-serif; outline: none; }
+.todo-add input::placeholder { color: var(--muted); }
+.todo-pri-sel { background: var(--card-bg); border: 1px solid var(--border); color: var(--white); padding: 11px 12px; border-radius: 8px; font-size: 13px; font-family: 'Inter', sans-serif; outline: none; cursor: pointer; }
+.todo-sec-lbl { font-family: 'Barlow Condensed', sans-serif; font-size: 11px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; margin-top: 16px; }
+.todo-list { display: flex; flex-direction: column; gap: 8px; }
+.todo-item { background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; padding: 13px 15px; display: flex; align-items: center; gap: 11px; }
+.todo-item.done { opacity: 0.45; }
+.todo-item.done .todo-text { text-decoration: line-through; color: var(--muted); }
+.todo-check { width: 20px; height: 20px; border-radius: 50%; border: 2px solid var(--border); cursor: pointer; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 11px; }
+.todo-item.done .todo-check { background: var(--grass); border-color: var(--grass); color: #000; }
+.todo-text { flex:1; font-size: 14px; }
+.prio-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.prio-dot.high { background: var(--red); }
+.prio-dot.medium { background: var(--gold); }
+.prio-dot.low { background: var(--muted); }
+.todo-del { background: transparent; border: none; color: var(--muted); cursor: pointer; font-size: 15px; padding: 2px 5px; border-radius: 4px; }
+.todo-del:hover { color: var(--red); }
+.todo-empty { text-align: center; padding: 40px; color: var(--muted); }
+
+/* 11 TYPE - PITCH */
+.lineup-page { display: grid; grid-template-columns: 1fr 320px; gap: 24px; align-items: start; }
+.pitch-wrap { background: linear-gradient(180deg, #1a4a2e 0%, #1e5533 25%, #1a4a2e 50%, #1e5533 75%, #1a4a2e 100%); border-radius: 12px; padding: 20px; position: relative; border: 2px solid rgba(255,255,255,0.08); min-height: 600px; }
+.pitch-lines { position: absolute; inset: 20px; pointer-events: none; }
+.pitch-lines svg { width: 100%; height: 100%; }
+.formation-select { display: flex; gap: 8px; margin-bottom: 16px; align-items: center; flex-wrap: wrap; }
+.formation-select label { font-size: 11px; color: rgba(255,255,255,0.6); text-transform: uppercase; letter-spacing: 1px; }
+.formation-select select { background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.2); color: var(--white); padding: 7px 12px; border-radius: 6px; font-size: 13px; outline: none; cursor: pointer; }
+.pitch-grid { position: relative; display: flex; flex-direction: column; gap: 0; min-height: 540px; }
+.pitch-row { display: flex; justify-content: space-around; align-items: center; flex: 1; padding: 8px 0; }
+.player-slot { display: flex; flex-direction: column; align-items: center; gap: 5px; cursor: pointer; min-width: 70px; }
+.player-slot .slot-circle { width: 52px; height: 52px; border-radius: 50%; border: 2px dashed rgba(255,255,255,0.3); background: rgba(0,0,0,0.25); display: flex; align-items: center; justify-content: center; font-size: 20px; transition: all 0.2s; position: relative; }
+.player-slot.filled .slot-circle { border: 2px solid var(--grass); background: rgba(0,200,83,0.15); }
+.player-slot .slot-circle:hover { border-color: var(--grass); background: rgba(0,200,83,0.1); }
+.player-slot .slot-name { font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 12px; color: #fff; text-shadow: 0 1px 3px rgba(0,0,0,0.8); text-align: center; max-width: 70px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.player-slot .slot-pos { font-size: 9px; color: rgba(255,255,255,0.6); text-transform: uppercase; letter-spacing: 1px; }
+.remove-slot { position: absolute; top: -4px; right: -4px; width: 16px; height: 16px; background: var(--red); border-radius: 50%; border: none; color: #fff; font-size: 9px; cursor: pointer; display: none; align-items: center; justify-content: center; line-height: 1; }
+.player-slot.filled:hover .remove-slot { display: flex; }
+
+/* SUBS PANEL */
+.subs-panel { background: var(--card-bg); border: 1px solid var(--border); border-radius: 10px; padding: 16px; }
+.subs-panel h3 { font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 14px; text-transform: uppercase; letter-spacing: 2px; color: var(--muted); margin-bottom: 12px; }
+.sub-slot { display: flex; align-items: center; gap: 10px; padding: 9px 10px; border-radius: 8px; border: 1px solid var(--border); background: rgba(255,255,255,0.02); margin-bottom: 7px; cursor: pointer; transition: border-color 0.15s; }
+.sub-slot:hover { border-color: rgba(0,200,83,0.3); }
+.sub-slot.filled { border-color: rgba(0,200,83,0.25); }
+.sub-num { width: 22px; height: 22px; border-radius: 50%; background: rgba(255,255,255,0.08); font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; color: var(--muted); flex-shrink: 0; }
+.sub-info { flex:1; }
+.sub-name { font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 14px; }
+.sub-pos { font-size: 10px; color: var(--muted); }
+.sub-remove { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 14px; }
+.sub-remove:hover { color: var(--red); }
+.btn-add-sub { width: 100%; background: transparent; border: 1px dashed rgba(255,255,255,0.15); color: var(--muted); padding: 9px; border-radius: 8px; font-size: 12px; cursor: pointer; margin-top: 6px; }
+.btn-add-sub:hover { border-color: var(--grass); color: var(--grass); }
+
+/* PLAYER PICKER MODAL */
+.picker-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 500; align-items: center; justify-content: center; padding: 20px; }
+.picker-overlay.open { display: flex; }
+.picker-modal { background: var(--pitch-mid); border: 1px solid rgba(0,200,83,0.2); border-radius: 12px; padding: 24px; width: 100%; max-width: 500px; max-height: 80vh; display: flex; flex-direction: column; }
+.picker-modal h3 { font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 18px; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 14px; }
+.picker-search { background: var(--pitch); border: 1px solid var(--border); color: var(--white); padding: 9px 13px; border-radius: 6px; font-size: 13px; font-family: 'Inter', sans-serif; outline: none; width: 100%; margin-bottom: 12px; }
+.picker-list { overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 6px; }
+.picker-item { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 8px; border: 1px solid var(--border); cursor: pointer; transition: border-color 0.15s; }
+.picker-item:hover { border-color: var(--grass); background: rgba(0,200,83,0.05); }
+.picker-item .pi-name { font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 15px; }
+.picker-item .pi-info { font-size: 11px; color: var(--muted); }
+.picker-close { background: transparent; border: 1px solid var(--border); color: var(--muted); padding: 8px 16px; border-radius: 6px; cursor: pointer; margin-top: 12px; font-size: 13px; }
+
+/* MODALS */
+.modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.75); z-index: 200; align-items: center; justify-content: center; padding: 20px; }
+.modal-overlay.open { display: flex; }
+.modal { background: var(--pitch-mid); border: 1px solid rgba(0,200,83,0.2); border-radius: 12px; padding: 28px; width: 100%; max-width: 540px; position: relative; max-height: 90vh; overflow-y: auto; }
+.modal-gold { border-color: rgba(240,180,41,0.3); }
+.modal-title { font-family: 'Barlow Condensed', sans-serif; font-weight: 900; font-size: 22px; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; }
+.modal-sub { font-size: 13px; margin-bottom: 20px; color: var(--muted); }
+.modal label { display: block; font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 5px; margin-top: 14px; }
+.modal input, .modal textarea, .modal select { width: 100%; background: var(--pitch); border: 1px solid var(--border); color: var(--white); padding: 9px 13px; border-radius: 6px; font-size: 13px; font-family: 'Inter', sans-serif; outline: none; }
+.modal textarea { resize: vertical; min-height: 75px; }
+.modal-footer { display: flex; gap: 10px; margin-top: 20px; }
+.btn-cancel { flex:1; background: transparent; border: 1px solid var(--border); color: var(--muted); padding: 9px; border-radius: 6px; cursor: pointer; font-size: 13px; }
+.btn-save { flex:2; background: var(--grass); border: none; color: #000; padding: 9px; border-radius: 6px; font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 15px; letter-spacing: 1px; text-transform: uppercase; cursor: pointer; }
+.btn-save:hover { background: #00e65c; }
+.btn-save-gold { background: var(--gold); }
+.btn-save-gold:hover { background: #f7c948; }
+.modal-close { position: absolute; top: 14px; right: 14px; background: transparent; border: none; color: var(--muted); font-size: 20px; cursor: pointer; }
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.form-row .fg { display: flex; flex-direction: column; }
+.form-row .fg label { margin-top: 14px; }
+
+/* MINI MODAL */
+.mini-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 300; align-items: center; justify-content: center; padding: 20px; }
+.mini-overlay.open { display: flex; }
+.mini-modal { background: var(--pitch-mid); border: 1px solid rgba(240,180,41,0.3); border-radius: 10px; padding: 22px; width: 100%; max-width: 340px; }
+.mini-title { font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 16px; text-transform: uppercase; letter-spacing: 1px; color: var(--gold); margin-bottom: 14px; }
+.mini-input { width: 100%; background: var(--pitch); border: 1px solid var(--border); color: var(--white); padding: 9px 13px; border-radius: 6px; font-size: 13px; font-family: 'Inter', sans-serif; outline: none; }
+.mini-footer { display: flex; gap: 8px; margin-top: 14px; }
+
+/* AGE TABLE */
+.age-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.age-table th { background: var(--pitch-mid); color: var(--muted); font-family: 'Barlow Condensed', sans-serif; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; padding: 10px 12px; text-align: left; border-bottom: 1px solid var(--border); white-space: nowrap; }
+.age-table td { padding: 10px 12px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+.age-table tr:hover td { background: rgba(255,255,255,0.02); }
+.age-table .rank { color: var(--muted); font-size: 12px; font-weight: 600; }
+.age-table .p-name { font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 16px; color: var(--white); }
+.age-table .p-age { font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 18px; color: var(--grass); }
+.age-table .p-nat { display: flex; align-items: center; gap: 5px; }
+.age-table .p-links { display: flex; gap: 5px; }
+.age-table .link-btn { background: rgba(12,83,184,0.2); border: 1px solid rgba(12,83,184,0.5); color: #6ba3ff; padding: 4px 8px; border-radius: 4px; font-size: 11px; text-decoration: none; white-space: nowrap; }
+.age-table .link-btn.vid { background: rgba(255,71,87,0.1); border-color: rgba(255,71,87,0.3); color: #ff6b7a; }
+.age-group-header td { background: var(--pitch-light); color: var(--gold); font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 12px; text-transform: uppercase; letter-spacing: 2px; padding: 6px 12px; }
+
+/* LINEUP FULL WIDTH + SUBS BELOW */
+.lineup-page { display: flex; flex-direction: column; gap: 20px; }
+.pitch-and-subs { display: flex; flex-direction: column; gap: 0; }
+.subs-below { background: var(--card-bg); border: 1px solid var(--border); border-radius: 0 0 10px 10px; padding: 16px; border-top: none; }
+.subs-below h3 { font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 13px; text-transform: uppercase; letter-spacing: 2px; color: var(--muted); margin-bottom: 12px; }
+.subs-row { display: flex; gap: 10px; flex-wrap: wrap; }
+.sub-card { display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border); background: rgba(255,255,255,0.02); min-width: 160px; flex: 1; max-width: 220px; }
+.sub-card.filled { border-color: rgba(0,200,83,0.2); }
+.sub-card .sub-num { width: 22px; height: 22px; border-radius: 50%; background: rgba(255,255,255,0.08); font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; color: var(--muted); flex-shrink: 0; }
+.sub-card .sub-info { flex:1; min-width:0; }
+.sub-card .sub-name { font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sub-card .sub-pos { font-size: 10px; color: var(--muted); }
+.sub-card .sub-remove { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 13px; }
+.sub-card .sub-remove:hover { color: var(--red); }
+.btn-add-sub-inline { background: transparent; border: 1px dashed rgba(255,255,255,0.15); color: var(--muted); padding: 8px 14px; border-radius: 8px; font-size: 12px; cursor: pointer; min-width: 140px; }
+.btn-add-sub-inline:hover { border-color: var(--grass); color: var(--grass); }
+
+/* ── PIPELINE ── */
+.pipeline-wrap { overflow-x: auto; padding-bottom: 12px; }
+.pipeline-board { display: flex; gap: 14px; min-width: 900px; align-items: flex-start; }
+.pipe-col { background: var(--card-bg); border: 1px solid var(--border); border-radius: 10px; padding: 14px; flex: 1; min-width: 170px; }
+.pipe-col-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; padding-bottom: 10px; border-bottom: 1px solid var(--border); }
+.pipe-col-title { font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 13px; text-transform: uppercase; letter-spacing: 1px; }
+.pipe-col-count { background: rgba(255,255,255,0.08); border-radius: 10px; padding: 1px 8px; font-size: 10px; font-weight: 700; color: var(--muted); }
+.pipe-col.drop-active { outline: 2px dashed rgba(0,200,83,0.4); outline-offset: 3px; }
+.pipe-card { background: var(--pitch-mid); border: 1px solid var(--border); border-radius: 8px; padding: 11px 12px; margin-bottom: 8px; cursor: grab; transition: border-color 0.15s, transform 0.1s; position: relative; }
+.pipe-card:hover { border-color: rgba(0,200,83,0.3); transform: translateY(-1px); }
+.pipe-card.dragging { opacity: 0.35; cursor: grabbing; }
+.pipe-card-name { font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 15px; color: var(--white); margin-bottom: 3px; }
+.pipe-card-info { font-size: 10px; color: var(--muted); margin-bottom: 6px; }
+.pipe-card-tags { display: flex; gap: 4px; flex-wrap: wrap; margin-bottom: 6px; }
+.pipe-tag { font-size: 9px; font-weight: 700; padding: 2px 6px; border-radius: 3px; text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap; }
+.pipe-card-move { display: flex; gap: 4px; margin-top: 8px; border-top: 1px solid var(--border); padding-top: 8px; }
+.pipe-move-btn { flex: 1; background: rgba(255,255,255,0.04); border: 1px solid var(--border); color: var(--muted); padding: 4px 6px; border-radius: 4px; font-size: 10px; font-weight: 600; cursor: pointer; transition: all 0.12s; text-align: center; }
+.pipe-move-btn:hover { color: var(--white); border-color: rgba(255,255,255,0.2); }
+.pipe-move-btn.fwd { color: var(--grass); border-color: rgba(0,200,83,0.3); }
+.pipe-move-btn.fwd:hover { background: rgba(0,200,83,0.12); }
+.pipe-move-btn.back { color: var(--muted); }
+.pipe-empty { text-align: center; padding: 24px 10px; color: var(--muted); font-size: 11px; border: 1px dashed rgba(255,255,255,0.08); border-radius: 7px; }
+.pipe-legend { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 20px; }
+.pipe-legend-item { display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--muted); }
+.pipe-legend-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+/* Step badge on player cards */
+.step-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 10px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; cursor: pointer; transition: opacity 0.15s; }
+.step-badge:hover { opacity: 0.75; }
+.step-0 { background: rgba(140,160,192,0.15); color: var(--muted); border: 1px solid var(--border); }
+.step-1 { background: rgba(59,130,246,0.15); color: #60a5fa; border: 1px solid rgba(59,130,246,0.3); }
+.step-2 { background: rgba(168,85,247,0.15); color: #c084fc; border: 1px solid rgba(168,85,247,0.3); }
+.step-3 { background: rgba(249,115,22,0.15); color: #fb923c; border: 1px solid rgba(249,115,22,0.3); }
+.step-4 { background: rgba(240,180,41,0.15); color: var(--gold); border: 1px solid rgba(240,180,41,0.3); }
+.step-5 { background: rgba(0,200,83,0.15); color: var(--grass); border: 1px solid rgba(0,200,83,0.3); }
+/* Pipeline step change modal */
+.step-picker { display: flex; flex-direction: column; gap: 8px; margin-top: 4px; }
+.step-option { display: flex; align-items: center; gap: 10px; padding: 11px 14px; border-radius: 8px; border: 1px solid var(--border); cursor: pointer; transition: all 0.15s; }
+.step-option:hover { border-color: rgba(0,200,83,0.3); background: rgba(0,200,83,0.05); }
+.step-option.current { border-color: var(--grass); background: rgba(0,200,83,0.08); }
+.step-option-icon { font-size: 18px; width: 24px; text-align: center; }
+.step-option-text { flex: 1; }
+.step-option-label { font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 15px; }
+.step-option-desc { font-size: 11px; color: var(--muted); margin-top: 1px; }
+
+/* ── DASHBOARD ── */
+.dash-section-title {
+  font-family: 'Barlow Condensed', sans-serif; font-size: 10px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 2.5px; color: var(--muted);
+  margin-bottom: 12px; margin-top: 28px; display: flex; align-items: center; gap: 8px;
+}
+.dash-section-title:first-child { margin-top: 0; }
+.dash-section-title::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+.kpi-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px; margin-bottom: 4px; }
+.kpi-card {
+  background: var(--card-bg); border: 1px solid var(--border); border-radius: 10px;
+  padding: 16px 18px; position: relative; overflow: hidden; transition: border-color 0.15s, transform 0.15s;
+}
+.kpi-card:hover { transform: translateY(-1px); }
+.kpi-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; }
+.kpi-green::before { background: var(--grass); }
+.kpi-gold::before { background: var(--gold); }
+.kpi-red::before { background: var(--red); }
+.kpi-purple::before { background: var(--purple); }
+.kpi-blue::before { background: #3b82f6; }
+.kpi-cyan::before { background: #06b6d4; }
+.kpi-icon { position: absolute; right: 14px; top: 14px; font-size: 22px; opacity: 0.18; }
+.kpi-label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; }
+.kpi-value { font-family: 'Barlow Condensed', sans-serif; font-weight: 900; font-size: 38px; line-height: 1; color: var(--white); }
+.kpi-sub { font-size: 11px; color: var(--muted); margin-top: 4px; }
+
+/* PIPELINE MINI BAR */
+.pipe-mini-bar { display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; margin-bottom: 4px; }
+.pipe-mini-step {
+  background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px;
+  padding: 12px 10px; text-align: center; cursor: pointer; transition: border-color 0.15s;
+}
+.pipe-mini-step:hover { border-color: rgba(255,255,255,0.15); }
+.pipe-mini-icon { font-size: 18px; margin-bottom: 4px; }
+.pipe-mini-count { font-family: 'Barlow Condensed', sans-serif; font-weight: 900; font-size: 26px; line-height: 1; }
+.pipe-mini-label { font-size: 9px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.8px; margin-top: 3px; line-height: 1.3; }
+
+/* ALERTS */
+.dash-alerts { display: flex; flex-direction: column; gap: 6px; }
+.dash-alert {
+  display: flex; align-items: center; gap: 12px;
+  background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px;
+  padding: 12px 14px; transition: border-color 0.15s;
+}
+.dash-alert:hover { border-color: rgba(255,255,255,0.12); }
+.dash-alert-icon { font-size: 18px; flex-shrink: 0; }
+.dash-alert-body { flex: 1; min-width: 0; }
+.dash-alert-name { font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 15px; }
+.dash-alert-detail { font-size: 11px; color: var(--muted); margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.dash-alert-tag { font-size: 10px; font-weight: 700; padding: 3px 10px; border-radius: 10px; white-space: nowrap; flex-shrink: 0; }
+.dash-alert-urgent { border-color: rgba(229,62,62,0.3); }
+.dash-alert-urgent .dash-alert-tag { background: rgba(229,62,62,0.15); color: #fc8181; border: 1px solid rgba(229,62,62,0.3); }
+.dash-alert-warn { border-color: rgba(249,115,22,0.3); }
+.dash-alert-warn .dash-alert-tag { background: rgba(249,115,22,0.12); color: #fb923c; border: 1px solid rgba(249,115,22,0.3); }
+.dash-alert-info { border-color: rgba(0,200,83,0.2); }
+.dash-alert-info .dash-alert-tag { background: rgba(0,200,83,0.1); color: var(--grass); border: 1px solid rgba(0,200,83,0.25); }
+
+/* NATION / QUICK STATS */
+.dash-two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.dash-box { background: var(--card-bg); border: 1px solid var(--border); border-radius: 10px; padding: 16px; }
+.dash-box-title { font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 12px; text-transform: uppercase; letter-spacing: 1.5px; color: var(--muted); margin-bottom: 12px; }
+.nat-row { display: flex; align-items: center; gap: 8px; padding: 6px 0; border-bottom: 1px solid var(--border); }
+.nat-row:last-child { border-bottom: none; }
+.nat-flag { font-size: 18px; width: 26px; text-align: center; flex-shrink: 0; }
+.nat-name { flex: 1; font-size: 12px; }
+.nat-bar-wrap { width: 80px; height: 4px; background: rgba(255,255,255,0.06); border-radius: 2px; overflow: hidden; }
+.nat-bar { height: 100%; background: var(--grass); border-radius: 2px; }
+.nat-count { font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 15px; color: var(--grass); min-width: 20px; text-align: right; }
+.agent-row { display: flex; align-items: center; justify-content: space-between; padding: 7px 0; border-bottom: 1px solid var(--border); font-size: 12px; }
+.agent-row:last-child { border-bottom: none; }
+.agent-count-badge { font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 14px; color: var(--gold); }
+
+/* ── SCOUT SCORE ── */
+.scout-bar-wrap { margin: 10px 0; padding: 11px 13px; background: rgba(255,255,255,0.025); border: 1px solid var(--border); border-radius: 8px; }
+.scout-bar-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+.scout-bar-label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; font-weight: 600; }
+.scout-score-val { font-family: 'Barlow Condensed', sans-serif; font-weight: 900; font-size: 22px; line-height: 1; }
+.scout-score-elite { color: var(--gold); }
+.scout-score-good  { color: var(--grass); }
+.scout-score-watch { color: #fb923c; }
+.scout-score-obs   { color: var(--muted); }
+.scout-track { height: 6px; background: rgba(255,255,255,0.06); border-radius: 3px; overflow: hidden; margin-bottom: 6px; }
+.scout-fill  { height: 100%; border-radius: 3px; transition: width 0.5s ease; }
+.scout-class-label { font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; }
+.scout-criteria { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; margin-top: 8px; }
+.scout-crit { text-align: center; padding: 5px 4px; background: rgba(255,255,255,0.02); border-radius: 5px; border: 1px solid var(--border); }
+.scout-crit-label { font-size: 8px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 2px; }
+.scout-crit-val { font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 14px; }
+.btn-scout { background: rgba(168,85,247,0.1); border: 1px solid rgba(168,85,247,0.3); color: #c084fc; padding: 7px 9px; border-radius: 6px; font-size: 11px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 4px; }
+.btn-scout:hover { background: rgba(168,85,247,0.22); }
+.scout-sliders { display: flex; flex-direction: column; gap: 14px; margin: 4px 0 8px; }
+.scout-slider-row { display: grid; grid-template-columns: 90px 1fr 32px; align-items: center; gap: 10px; }
+.scout-slider-name { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.8px; font-weight: 600; }
+.scout-slider-input { -webkit-appearance: none; width: 100%; height: 5px; border-radius: 3px; background: rgba(255,255,255,0.1); outline: none; cursor: pointer; }
+.scout-slider-input::-webkit-slider-thumb { -webkit-appearance: none; width: 18px; height: 18px; border-radius: 50%; background: var(--purple); cursor: pointer; border: 2px solid var(--pitch-mid); }
+.scout-slider-val { font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 17px; text-align: right; min-width: 28px; }
+.scout-total-box { background: var(--pitch); border: 1px solid rgba(168,85,247,0.25); border-radius: 10px; padding: 16px; text-align: center; margin-top: 10px; }
+.scout-total-num { font-family: 'Barlow Condensed', sans-serif; font-weight: 900; font-size: 56px; line-height: 1; }
+.scout-total-class { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 2px; margin-top: 4px; }
+.scout-total-desc { font-size: 11px; color: var(--muted); margin-top: 6px; }
+.scout-page-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 14px; }
+.scout-player-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 10px; padding: 16px; transition: border-color 0.15s, transform 0.12s; }
+.scout-player-card:hover { border-color: rgba(168,85,247,0.3); transform: translateY(-1px); }
+.scout-radar { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin: 10px 0; }
+.scout-radar-item { display: flex; align-items: center; gap: 6px; }
+.scout-radar-lbl { font-size: 10px; color: var(--muted); width: 56px; flex-shrink: 0; }
+.scout-radar-track { flex: 1; height: 4px; background: rgba(255,255,255,0.06); border-radius: 2px; overflow: hidden; }
+.scout-radar-fill { height: 100%; background: var(--purple); border-radius: 2px; }
+.scout-radar-num { font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 12px; min-width: 16px; text-align: right; }
+.scout-filter-bar { display: flex; gap: 8px; margin-bottom: 16px; align-items: center; flex-wrap: wrap; }
+.scout-class-btn { background: var(--card-bg); border: 1px solid var(--border); color: var(--muted); padding: 7px 14px; border-radius: 20px; font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 12px; letter-spacing: 1px; text-transform: uppercase; cursor: pointer; transition: all 0.15s; }
+.scout-class-btn:hover { color: var(--white); border-color: rgba(255,255,255,0.2); }
+.scout-class-btn.active { color: #000; border-color: transparent; }
+.scout-class-btn.all.active   { background: var(--muted); color: #000; }
+.scout-class-btn.elite.active { background: var(--gold); }
+.scout-class-btn.good.active  { background: var(--grass); }
+.scout-class-btn.watch.active { background: #fb923c; }
+.scout-class-btn.obs.active   { background: rgba(140,160,192,0.4); color: var(--white); }
+.scout-class-btn.none.active  { background: rgba(255,255,255,0.1); color: var(--white); }
+
+/* ── CARTE MONDIALE ── */
+.worldmap-layout { display: grid; grid-template-columns: 1fr 320px; gap: 20px; align-items: start; }
+.worldmap-main { display: flex; flex-direction: column; gap: 16px; }
+.worldmap-sidebar { display: flex; flex-direction: column; gap: 14px; }
+
+/* Bubble view */
+.world-bubbles { display: flex; flex-wrap: wrap; gap: 10px; padding: 24px; background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; min-height: 280px; align-items: center; justify-content: center; }
+.world-bubble { display: flex; flex-direction: column; align-items: center; gap: 4px; cursor: pointer; transition: transform 0.15s; }
+.world-bubble:hover { transform: scale(1.08); }
+.bubble-circle { border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 2px; border: 2px solid rgba(255,255,255,0.1); transition: border-color 0.15s; }
+.world-bubble:hover .bubble-circle { border-color: var(--grass); }
+.bubble-flag { line-height: 1; }
+.bubble-count { font-family: 'Barlow Condensed', sans-serif; font-weight: 900; color: #fff; text-shadow: 0 1px 3px rgba(0,0,0,0.5); }
+.bubble-name { font-size: 10px; color: var(--muted); text-align: center; max-width: 70px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* Table view */
+.world-table { background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+.world-table-row { display: flex; align-items: center; gap: 12px; padding: 11px 16px; border-bottom: 1px solid var(--border); transition: background 0.12s; cursor: pointer; }
+.world-table-row:last-child { border-bottom: none; }
+.world-table-row:hover { background: rgba(255,255,255,0.03); }
+.world-table-row.selected { background: rgba(0,200,83,0.06); border-left: 3px solid var(--grass); padding-left: 13px; }
+.wt-rank { font-family: 'Barlow Condensed', sans-serif; font-size: 11px; color: var(--muted); width: 18px; text-align: right; flex-shrink: 0; }
+.wt-flag { font-size: 20px; flex-shrink: 0; }
+.wt-name { font-size: 13px; font-weight: 500; flex: 1; }
+.wt-bar-wrap { width: 100px; height: 5px; background: rgba(255,255,255,0.06); border-radius: 3px; overflow: hidden; flex-shrink: 0; }
+.wt-bar { height: 100%; border-radius: 3px; transition: width 0.4s; }
+.wt-count { font-family: 'Barlow Condensed', sans-serif; font-weight: 900; font-size: 18px; color: var(--grass); min-width: 28px; text-align: right; flex-shrink: 0; }
+
+/* Detail panel */
+.world-detail { background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; padding: 18px; }
+.world-detail-header { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; padding-bottom: 14px; border-bottom: 1px solid var(--border); }
+.world-detail-flag { font-size: 40px; line-height: 1; }
+.world-detail-name { font-family: 'Barlow Condensed', sans-serif; font-weight: 900; font-size: 22px; }
+.world-detail-count { font-size: 12px; color: var(--muted); margin-top: 2px; }
+.world-detail-players { display: flex; flex-direction: column; gap: 8px; }
+.world-detail-player { display: flex; align-items: center; gap: 10px; padding: 9px 10px; background: rgba(255,255,255,0.02); border-radius: 7px; border: 1px solid var(--border); cursor: pointer; transition: border-color 0.12s; }
+.world-detail-player:hover { border-color: rgba(0,200,83,0.25); }
+.wdp-name { font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 14px; flex: 1; }
+.wdp-info { font-size: 10px; color: var(--muted); }
+
+/* Toggle buttons */
+.map-view-toggle { display: flex; gap: 6px; margin-bottom: 0; }
+.map-view-btn { background: var(--card-bg); border: 1px solid var(--border); color: var(--muted); padding: 6px 14px; border-radius: 6px; font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 12px; letter-spacing: 1px; text-transform: uppercase; cursor: pointer; transition: all 0.15s; }
+.map-view-btn.active { background: var(--pitch-light); color: var(--white); border-color: rgba(255,255,255,0.2); }
+.map-view-btn:hover:not(.active) { color: var(--white); }
+
+/* World stats box */
+.world-stats-box { background: var(--card-bg); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; }
+.world-stats-title { font-family: 'Barlow Condensed', sans-serif; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 2px; color: var(--muted); margin-bottom: 12px; }
+.world-stat-row { display: flex; align-items: center; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid var(--border); font-size: 12px; }
+.world-stat-row:last-child { border-bottom: none; }
+.world-stat-val { font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 16px; color: var(--grass); }
+
+/* ── OPPORTUNITÉS ── */
+.opp-section { margin-bottom: 32px; }
+.opp-section-header {
+  display: flex; align-items: center; gap: 10px;
+  margin-bottom: 14px; padding-bottom: 10px;
+  border-bottom: 1px solid var(--border);
+}
+.opp-section-icon { font-size: 20px; }
+.opp-section-title { font-family: 'Barlow Condensed', sans-serif; font-weight: 900; font-size: 16px; text-transform: uppercase; letter-spacing: 1px; }
+.opp-section-count { margin-left: auto; background: var(--pitch-light); border: 1px solid var(--border); color: var(--muted); font-size: 11px; padding: 2px 10px; border-radius: 12px; }
+.opp-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(270px, 1fr)); gap: 10px; }
+.opp-card {
+  background: var(--card-bg); border: 1px solid var(--border);
+  border-radius: 9px; padding: 14px 16px;
+  transition: border-color 0.15s, transform 0.12s;
+  position: relative; overflow: hidden;
+}
+.opp-card::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; }
+.opp-card.opp-urgent::before { background: var(--red); }
+.opp-card.opp-warn::before   { background: var(--orange); }
+.opp-card.opp-info::before   { background: var(--grass); }
+.opp-card.opp-purple::before { background: var(--purple); }
+.opp-card.opp-gold::before   { background: var(--gold); }
+.opp-card.opp-blue::before   { background: #3b82f6; }
+.opp-card:hover { transform: translateY(-1px); border-color: rgba(255,255,255,0.12); }
+.opp-card-top { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 6px; }
+.opp-name { font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 17px; }
+.opp-tag  { font-size: 9px; font-weight: 700; padding: 3px 8px; border-radius: 10px; text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap; flex-shrink: 0; margin-left: 8px; margin-top: 2px; }
+.opp-tag-urgent { background: rgba(229,62,62,0.15); color: #fc8181; border: 1px solid rgba(229,62,62,0.3); }
+.opp-tag-warn   { background: rgba(249,115,22,0.12); color: #fb923c; border: 1px solid rgba(249,115,22,0.3); }
+.opp-tag-info   { background: rgba(0,200,83,0.12);  color: var(--grass); border: 1px solid rgba(0,200,83,0.25); }
+.opp-tag-purple { background: rgba(168,85,247,0.12); color: #c084fc; border: 1px solid rgba(168,85,247,0.3); }
+.opp-tag-gold   { background: rgba(240,180,41,0.12); color: var(--gold); border: 1px solid rgba(240,180,41,0.3); }
+.opp-tag-blue   { background: rgba(59,130,246,0.12); color: #60a5fa; border: 1px solid rgba(59,130,246,0.3); }
+.opp-detail { font-size: 11px; color: var(--muted); margin-bottom: 8px; line-height: 1.5; }
+.opp-actions { display: flex; gap: 6px; margin-top: 10px; }
+.opp-empty { text-align: center; padding: 24px; color: var(--muted); font-size: 12px; background: rgba(255,255,255,0.01); border: 1px dashed rgba(255,255,255,0.06); border-radius: 8px; grid-column: 1/-1; }
+/* Opp filter bar */
+.opp-filter-bar { display: flex; gap: 8px; margin-bottom: 24px; flex-wrap: wrap; }
+.opp-filter-btn { background: var(--card-bg); border: 1px solid var(--border); color: var(--muted); padding: 7px 14px; border-radius: 20px; font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 12px; letter-spacing: 1px; text-transform: uppercase; cursor: pointer; transition: all 0.15s; display: flex; align-items: center; gap: 5px; }
+.opp-filter-btn:hover { color: var(--white); border-color: rgba(255,255,255,0.15); }
+.opp-filter-btn.active { background: var(--pitch-light); color: var(--white); border-color: rgba(255,255,255,0.2); }
+.opp-filter-count { background: rgba(255,255,255,0.1); border-radius: 8px; padding: 0px 5px; font-size: 10px; }
+
+.toast { position: fixed; bottom: 24px; right: 24px; background: var(--grass); color: #000; padding: 11px 18px; border-radius: 8px; font-weight: 600; font-size: 13px; z-index: 999; transform: translateY(60px); opacity: 0; transition: all 0.3s; }
+.toast.show { transform: translateY(0); opacity: 1; }
+
+@media (max-width: 768px) {
+  header { padding: 0 16px; }
+  .tabs-bar { padding: 0 8px; }
+  .page-layout { flex-direction: column; }
+  .categories-sidebar { width: 100%; }
+  .cat-list { flex-direction: row; flex-wrap: wrap; }
+  .cat-item { flex: none; }
+  main { padding: 16px 12px; }
+  .lineup-page { grid-template-columns: 1fr; }
+  .form-row { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo"><span class="logo-dot"></span>Scout<span style="color:var(--grass)">Board</span></div>
+  <div class="header-stats">
+    <div class="hstat"><div class="num" id="stat-total">0</div><div class="lbl">Joueurs</div></div>
+    <div class="hstat"><div class="num" id="stat-clubs-count">0</div><div class="lbl">Clubs</div></div>
+    <div class="hstat"><div class="num" id="stat-nations">0</div><div class="lbl">Nations</div></div>
+  </div>
+</header>
+
+<div class="tabs-bar">
+  <button class="tab-btn" onclick="switchTab('dashboard',this)">📊 Dashboard</button>
+  <button class="tab-btn active" onclick="switchTab('players',this)">👤 Joueurs</button>
+  <button class="tab-btn" onclick="switchTab('clubs',this)">🏟️ Clubs</button>
+  <button class="tab-btn" onclick="switchTab('pipeline',this)">🔄 Pipeline</button>
+  <button class="tab-btn" onclick="switchTab('scouting',this)">🎯 Scouting</button>
+  <button class="tab-btn" onclick="switchTab('opps',this)">🔥 Opportunités</button>
+  <button class="tab-btn" onclick="switchTab('worldmap',this)">🌍 Carte</button>
+  <button class="tab-btn" onclick="switchTab('todo',this)">✅ To Do</button>
+  <button class="tab-btn" onclick="switchTab('lineup',this)">⚽ Mon 11 Type</button>
+  <button class="tab-btn" onclick="switchTab('agelist',this)">📋 Liste par Âge</button>
+</div>
+
+<main>
+
+<!-- ===== DASHBOARD ===== -->
+<div class="tab-panel" id="tab-dashboard">
+  <!-- KPI JOUEURS -->
+  <div class="dash-section-title">👤 Joueurs</div>
+  <div class="kpi-grid" id="dash-kpi-players"></div>
+
+  <!-- PIPELINE MINI -->
+  <div class="dash-section-title">🔄 Pipeline de Transfert</div>
+  <div class="pipe-mini-bar" id="dash-pipeline"></div>
+
+  <!-- KPI CLUBS -->
+  <div class="dash-section-title">🏟️ Clubs</div>
+  <div class="kpi-grid" id="dash-kpi-clubs"></div>
+
+  <!-- ALERTES + STATS 2 col -->
+  <div class="dash-section-title">⚠️ Alertes & Statistiques</div>
+  <div class="dash-two-col">
+    <div>
+      <div class="dash-alerts" id="dash-alerts"></div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:14px">
+      <div class="dash-box">
+        <div class="dash-box-title">🌍 Top Nationalités</div>
+        <div id="dash-nations"></div>
+      </div>
+      <div class="dash-box">
+        <div class="dash-box-title">🤝 Intermédiaires</div>
+        <div id="dash-agents"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== JOUEURS ===== -->
+<div class="tab-panel active" id="tab-players">
+  <div class="page-layout">
+    <div class="categories-sidebar">
+      <h3>Catégories</h3>
+      <div class="cat-list" id="player-cat-list"></div>
+      <button class="btn-add-cat" onclick="addCategory('player')">+ Ajouter catégorie</button>
+    </div>
+    <div class="content-area">
+      <div class="content-top">
+        <div class="search-wrap"><span class="search-icon">⌕</span><input type="text" id="p-search" placeholder="Rechercher joueur, club, poste…" oninput="renderPlayers()"></div>
+        <button class="btn-primary" onclick="openPlayerModal()">+ Ajouter joueur</button>
+      </div>
+      <div class="section-head">
+        <span class="section-title" id="p-section-title">Tous les joueurs</span>
+        <span class="count-badge" id="p-count">0</span>
+      </div>
+      <div class="grid" id="player-grid"
+        ondragover="onDragOver(event,'player')"
+        ondragleave="onDragLeave(event)"
+        ondrop="onDrop(event,'player')"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== CLUBS ===== -->
+<div class="tab-panel" id="tab-clubs">
+  <div class="page-layout">
+    <div class="categories-sidebar">
+      <h3>Catégories</h3>
+      <div class="cat-list" id="club-cat-list"></div>
+      <button class="btn-add-cat" onclick="addCategory('club')">+ Ajouter catégorie</button>
+    </div>
+    <div class="content-area">
+      <div class="content-top">
+        <div class="search-wrap"><span class="search-icon">⌕</span><input type="text" id="c-search" placeholder="Rechercher club, ligue…" oninput="renderClubs()"></div>
+        <button class="btn-gold" onclick="openClubModal()">+ Ajouter club</button>
+      </div>
+      <div class="section-head">
+        <span class="section-title" id="c-section-title">Tous les clubs</span>
+        <span class="count-badge" id="c-count">0</span>
+      </div>
+      <div class="grid" id="club-grid"
+        ondragover="onDragOver(event,'club')"
+        ondragleave="onDragLeave(event)"
+        ondrop="onDrop(event,'club')"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== PIPELINE ===== -->
+<div class="tab-panel" id="tab-pipeline">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+    <div>
+      <div style="font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:20px;text-transform:uppercase;letter-spacing:1px">🔄 Pipeline de Transfert</div>
+      <div style="font-size:12px;color:var(--muted);margin-top:2px">Glissez les cartes entre les colonnes ou utilisez les boutons ← →</div>
+    </div>
+    <div id="pipeline-stats" style="display:flex;gap:14px"></div>
+  </div>
+  <div class="pipe-legend" id="pipe-legend"></div>
+  <div class="pipeline-wrap">
+    <div class="pipeline-board" id="pipeline-board"></div>
+  </div>
+</div>
+
+<!-- ===== SCOUTING ===== -->
+<div class="tab-panel" id="tab-scouting">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+    <div>
+      <div style="font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:20px;text-transform:uppercase;letter-spacing:1px">🎯 Rapports de Scouting</div>
+      <div style="font-size:12px;color:var(--muted);margin-top:2px">Notez chaque joueur sur 6 critères — Score /100 calculé automatiquement</div>
+    </div>
+    <div id="scout-summary" style="display:flex;gap:14px"></div>
+  </div>
+  <div class="scout-filter-bar">
+    <button class="scout-class-btn all active" onclick="setScoutFilter('all',this)">🗂 Tous</button>
+    <button class="scout-class-btn elite"      onclick="setScoutFilter('elite',this)">⭐ Elite Prospect (85+)</button>
+    <button class="scout-class-btn good"       onclick="setScoutFilter('good',this)">✅ Très Bon (75-84)</button>
+    <button class="scout-class-btn watch"      onclick="setScoutFilter('watch',this)">👁 À Suivre (65-74)</button>
+    <button class="scout-class-btn obs"        onclick="setScoutFilter('obs',this)">📋 Observation (&lt;65)</button>
+    <button class="scout-class-btn none"       onclick="setScoutFilter('none',this)">❓ Non évalués</button>
+  </div>
+  <div class="scout-page-grid" id="scout-grid"></div>
+</div>
+
+<!-- ===== OPPORTUNITÉS ===== -->
+<div class="tab-panel" id="tab-opps">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+    <div>
+      <div style="font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:20px;text-transform:uppercase;letter-spacing:1px">🔥 Opportunités</div>
+      <div style="font-size:12px;color:var(--muted);margin-top:2px">Joueurs à fort potentiel de placement — mis à jour en temps réel</div>
+    </div>
+  </div>
+  <div class="opp-filter-bar" id="opp-filter-bar"></div>
+  <div id="opp-content"></div>
+</div>
+
+<!-- ===== CARTE MONDIALE ===== -->
+<div class="tab-panel" id="tab-worldmap">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:10px">
+    <div>
+      <div style="font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:20px;text-transform:uppercase;letter-spacing:1px">🌍 Carte Mondiale</div>
+      <div style="font-size:12px;color:var(--muted);margin-top:2px">Répartition géographique de vos joueurs</div>
+    </div>
+    <div class="map-view-toggle">
+      <button class="map-view-btn active" id="map-btn-bubbles" onclick="setMapView('bubbles')">🫧 Bulles</button>
+      <button class="map-view-btn" id="map-btn-table" onclick="setMapView('table')">📋 Tableau</button>
+    </div>
+  </div>
+  <div class="worldmap-layout">
+    <div class="worldmap-main">
+      <!-- Bubbles view -->
+      <div id="map-view-bubbles">
+        <div class="world-bubbles" id="world-bubbles"></div>
+      </div>
+      <!-- Table view -->
+      <div id="map-view-table" style="display:none">
+        <div class="world-table" id="world-table"></div>
+      </div>
+    </div>
+    <div class="worldmap-sidebar">
+      <!-- Stats box -->
+      <div class="world-stats-box">
+        <div class="world-stats-title">📊 Statistiques</div>
+        <div id="world-stats"></div>
+      </div>
+      <!-- Detail panel -->
+      <div class="world-detail" id="world-detail" style="display:none">
+        <div class="world-detail-header">
+          <div class="world-detail-flag" id="wd-flag"></div>
+          <div>
+            <div class="world-detail-name" id="wd-name"></div>
+            <div class="world-detail-count" id="wd-count"></div>
+          </div>
+        </div>
+        <div class="world-detail-players" id="wd-players"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== TO DO ===== -->
+<div class="tab-panel" id="tab-todo">
+  <div class="todo-wrap">
+    <div class="todo-add">
+      <input type="text" id="todo-input" placeholder="Ajouter une tâche…">
+      <select id="todo-pri" class="todo-pri-sel">
+        <option value="high">🔴 Haute</option>
+        <option value="medium" selected>🟡 Moyenne</option>
+        <option value="low">⚪ Basse</option>
+      </select>
+      <button class="btn-primary" onclick="addTodo()">+ Ajouter</button>
+    </div>
+    <div id="todo-list" class="todo-list"></div>
+  </div>
+</div>
+
+<!-- ===== 11 TYPE ===== -->
+<div class="tab-panel" id="tab-lineup">
+  <div class="lineup-page">
+    <div class="formation-select">
+      <label>Formation :</label>
+      <select id="formation-select" onchange="changeFormation()">
+        <option value="4-3-3">4-3-3</option>
+        <option value="4-4-2">4-4-2</option>
+        <option value="4-2-3-1">4-2-3-1</option>
+        <option value="3-5-2">3-5-2</option>
+        <option value="5-3-2">5-3-2</option>
+        <option value="3-4-3">3-4-3</option>
+        <option value="4-5-1">4-5-1</option>
+      </select>
+    </div>
+    <div class="pitch-and-subs">
+      <div class="pitch-wrap" style="border-radius:10px 10px 0 0">
+        <div class="pitch-grid" id="pitch-grid"></div>
+      </div>
+      <div class="subs-below">
+        <h3>🔄 Remplaçants</h3>
+        <div class="subs-row" id="subs-list"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== LISTE PAR ÂGE ===== -->
+<div class="tab-panel" id="tab-agelist">
+  <div class="section-head" style="margin-bottom:20px">
+    <span class="section-title">Joueurs par Âge (ordre croissant)</span>
+    <span class="count-badge" id="age-count">0</span>
+  </div>
+  <div style="overflow-x:auto">
+    <table class="age-table" id="age-table">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Joueur</th>
+          <th>Âge</th>
+          <th>Né</th>
+          <th>Nat.</th>
+          <th>Poste</th>
+          <th>Club</th>
+          <th>Ligue</th>
+          <th>Agent / Intermédiaire</th>
+          <th>Liens</th>
+        </tr>
+      </thead>
+      <tbody id="age-tbody"></tbody>
+    </table>
+  </div>
+</div>
+
+</main>
+
+<!-- ADD PLAYER MODAL -->
+<div class="modal-overlay" id="player-modal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('player-modal')">✕</button>
+    <div class="modal-title">Ajouter Joueur</div>
+    <div class="modal-sub">Remplissez les détails du joueur</div>
+    <div class="form-row">
+      <div class="fg"><label>Nom complet *</label><input type="text" id="pm-name" placeholder="ex. Karim Benzema"></div>
+      <div class="fg"><label>Année de naissance *</label><input type="number" id="pm-year" placeholder="ex. 1987"></div>
+    </div>
+    <div class="form-row">
+      <div class="fg"><label>Nationalité *</label><input type="text" id="pm-nat" placeholder="ex. France"></div>
+      <div class="fg"><label>Poste *</label><input type="text" id="pm-pos" placeholder="ex. Attaquant"></div>
+    </div>
+    <div class="form-row">
+      <div class="fg"><label>Club actuel</label><input type="text" id="pm-club" placeholder="ex. Al Ittihad"></div>
+      <div class="fg"><label>Ligue</label><input type="text" id="pm-league" placeholder="ex. Saudi Pro League"></div>
+    </div>
+    <div class="form-row">
+      <div class="fg"><label>Pays (club)</label><input type="text" id="pm-country" placeholder="ex. Arabie Saoudite"></div>
+      <div class="fg"><label>Taille</label><input type="text" id="pm-height" placeholder="ex. 1.85m"></div>
+    </div>
+    <div class="form-row">
+      <div class="fg"><label>Intermédiaire</label><input type="text" id="pm-agent" placeholder="ex. Souleymane Sylla"></div>
+      <div class="fg"><label>Date de naissance</label><input type="text" id="pm-dob" placeholder="ex. 19 Dec 1987"></div>
+    </div>
+    <label>Transfermarkt URL</label><input type="url" id="pm-tm" placeholder="https://www.transfermarkt.com/…">
+    <label>Vidéo URL</label><input type="url" id="pm-video" placeholder="https://www.youtube.com/…">
+    <label>Commentaire / Notes</label><textarea id="pm-comment" placeholder="ex. Fin de contrat juin 2026…"></textarea>
+    <label>Objectif de transfert</label><input type="text" id="pm-target" placeholder="ex. Chercher un club de Ligue 2">
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeModal('player-modal')">Annuler</button>
+      <button class="btn-save" onclick="savePlayer()">Sauvegarder</button>
+    </div>
+  </div>
+</div>
+
+<!-- ADD CLUB MODAL -->
+<div class="modal-overlay" id="club-modal">
+  <div class="modal modal-gold">
+    <button class="modal-close" onclick="closeModal('club-modal')">✕</button>
+    <div class="modal-title">Ajouter Club</div>
+    <div class="modal-sub">Entrez les informations du club</div>
+    <label>Nom du club *</label><input type="text" id="cm-name" placeholder="ex. SC Bastia">
+    <label>Ligue / Division</label><input type="text" id="cm-league" placeholder="ex. Ligue 2">
+    <label>Pays</label><input type="text" id="cm-country" placeholder="ex. France">
+    <label>Contact</label><input type="text" id="cm-contact" placeholder="ex. Directeur sportif">
+    <label>Notes</label><textarea id="cm-notes" placeholder="ex. Budget €500k…"></textarea>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeModal('club-modal')">Annuler</button>
+      <button class="btn-save btn-save-gold" onclick="saveClub()">Sauvegarder</button>
+    </div>
+  </div>
+</div>
+
+<!-- ADD PROFILE MINI MODAL -->
+<div class="mini-overlay" id="profile-mini">
+  <div class="mini-modal">
+    <div class="mini-title">Profil recherché</div>
+    <input type="text" class="mini-input" id="profile-input" placeholder="ex. Latéral gauche U23, Attaquant…">
+    <div class="mini-footer">
+      <button class="btn-cancel" style="flex:1;background:transparent;border:1px solid var(--border);color:var(--muted);padding:8px;border-radius:6px;cursor:pointer;" onclick="closeModal('profile-mini')">Annuler</button>
+      <button class="btn-save btn-save-gold" style="flex:2;background:var(--gold);border:none;color:#000;padding:8px;border-radius:6px;font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:14px;cursor:pointer;" onclick="saveProfile()">Ajouter</button>
+    </div>
+  </div>
+</div>
+
+<!-- ADD CATEGORY MINI MODAL -->
+<div class="mini-overlay" id="cat-mini">
+  <div class="mini-modal">
+    <div class="mini-title">Nouvelle catégorie</div>
+    <input type="text" class="mini-input" id="cat-input" placeholder="ex. En négociation, Prospects…">
+    <div class="mini-footer">
+      <button class="btn-cancel" style="flex:1;background:transparent;border:1px solid var(--border);color:var(--muted);padding:8px;border-radius:6px;cursor:pointer;" onclick="closeModal('cat-mini')">Annuler</button>
+      <button class="btn-save btn-save-gold" style="flex:2;background:var(--gold);border:none;color:#000;padding:8px;border-radius:6px;font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:14px;cursor:pointer;" onclick="confirmAddCategory()">Créer</button>
+    </div>
+  </div>
+</div>
+
+<!-- PLAYER PICKER -->
+<div class="picker-overlay" id="player-picker">
+  <div class="picker-modal">
+    <h3 id="picker-title">Choisir un joueur</h3>
+    <input type="text" class="picker-search" id="picker-search" placeholder="Rechercher…" oninput="renderPickerList()">
+    <div class="picker-list" id="picker-list"></div>
+    <button class="picker-close" onclick="closePicker()">✕ Fermer</button>
+  </div>
+</div>
+
+<!-- REQUEST MODAL -->
+<div class="modal-overlay" id="request-modal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('request-modal')">✕</button>
+    <div class="modal-title">Demande Club</div>
+    <div class="modal-sub" id="req-player-name"></div>
+    <label>Club</label><input type="text" id="req-club" placeholder="ex. SC Bastia">
+    <label>Ligue</label><input type="text" id="req-league" placeholder="ex. Ligue 2">
+    <label>Type d'approche</label>
+    <select id="req-type">
+      <option value="">Sélectionner…</option>
+      <option>Demande d'essai</option><option>Proposition de transfert</option>
+      <option>Proposition de prêt</option><option>Présentation agent libre</option>
+      <option>Discussion pré-contrat</option>
+    </select>
+    <label>Message</label><textarea id="req-msg" placeholder="Décrivez le profil du joueur…"></textarea>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeModal('request-modal')">Annuler</button>
+      <button class="btn-save" onclick="sendRequest()">Envoyer →</button>
+    </div>
+  </div>
+</div>
+
+<!-- PIPELINE STEP MODAL -->
+<div class="modal-overlay" id="pipeline-step-modal">
+  <div class="modal" style="max-width:420px">
+    <button class="modal-close" onclick="closeModal('pipeline-step-modal')">✕</button>
+    <div class="modal-title">Changer le Statut</div>
+    <div class="modal-sub" id="pipe-modal-player" style="color:var(--grass);margin-bottom:16px"></div>
+    <div class="step-picker" id="step-picker"></div>
+  </div>
+</div>
+
+<!-- SCOUT MODAL -->
+<div class="modal-overlay" id="scout-modal">
+  <div class="modal" style="border-color:rgba(168,85,247,0.3);max-width:480px">
+    <button class="modal-close" onclick="closeModal('scout-modal')">✕</button>
+    <div class="modal-title" style="color:#c084fc">🎯 Rapport Scout</div>
+    <div class="modal-sub" id="scout-modal-name" style="color:var(--white);font-size:14px;font-weight:600"></div>
+    <div class="scout-sliders" id="scout-sliders"></div>
+    <div class="scout-total-box">
+      <div class="scout-total-num" id="scout-preview-num">—</div>
+      <div class="scout-total-class" id="scout-preview-class">—</div>
+      <div class="scout-total-desc" id="scout-preview-desc"></div>
+    </div>
+    <label style="display:block;font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin:12px 0 5px">Notes du scout</label>
+    <textarea id="scout-notes" style="width:100%;background:var(--pitch);border:1px solid var(--border);color:var(--white);padding:9px 12px;border-radius:6px;font-size:12px;font-family:'Inter',sans-serif;outline:none;resize:vertical;min-height:65px" placeholder="Observations terrain, contexte du match, niveau du championnat…"></textarea>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeModal('scout-modal')">Annuler</button>
+      <button class="btn-save" style="background:var(--purple);color:#fff" onclick="saveScoutReport()">Enregistrer le rapport</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ==============================
+// STATIC PLAYERS
+// ==============================
+const STATIC_PLAYERS = [
+  { id:'s1',  name:"Adama Diaw",       dob:"22 Sep 2003", year:2003, club:"Oman Club",          league:"Jindal League",              country:"Oman",                 position:"Striker / Centre Forward",                    height:"1.89m", nationality:"Senegal",   tm:"https://www.transfermarkt.com/adama-diaw/profil/spieler/1400015",    video:"https://www.youtube.com/watch?v=ILpJjLKCgMo", agent:"Souleymane Sylla",             comment:"Represented by an agent – End of representation agreement June 26", target:"Chercher un club de National" },
+  { id:'s2',  name:"Adama Diomande",   dob:"14 Nov 2004", year:2004, club:"FC Palm City",        league:"Second Division League",      country:"United Arab Emirates", position:"Centre Back",                                  height:"1.95m", nationality:"Ivory Coast",tm:"",                                                                     video:"https://www.youtube.com/watch?v=8H6b2o5rdbM",  agent:"Souleymane Sylla / Mentis",    comment:"Trial in Korea in April 2026 – Represented by Mentis",              target:"SC Bastia" },
+  { id:'s3',  name:"Cheikne Sylla",    dob:"3 Apr 1994",  year:1994, club:"Erzurumspor FK",      league:"1.Lig Turkiye",               country:"Turkey",               position:"Striker / Centre Forward",                    height:"1.90m", nationality:"Mali",      tm:"https://www.transfermarkt.com/cheikne-sylla/profil/spieler/809132",  video:"https://youtu.be/9Sj1mnpJCgg",                agent:"Souleymane Sylla",             comment:"Not represented",                                                   target:"Chercher un club de Ligue 2" },
+  { id:'s4',  name:"Joel Daniel",      dob:"27 May 2004", year:2004, club:"FC Palm City",        league:"Second Division League",      country:"United Arab Emirates", position:"Left Back",                                    height:"1.84m", nationality:"Nigeria",   tm:"https://www.transfermarkt.com/joel-daniel/profil/spieler/1196064",   video:"https://www.youtube.com/watch?v=3bz_g0fKL4c",  agent:"Souleymane Sylla / Mentis",    comment:"Represented by Mentis",                                             target:"Chercher un club de National" },
+  { id:'s5',  name:"Omar Correia",     dob:"10 Apr 2000", year:2000, club:"Juve Stabia",         league:"Serie B",                     country:"Italy",                position:"Defensive Midfielder",                         height:"1.87m", nationality:"France",    tm:"https://www.transfermarkt.com/omar-correia/profil/spieler/977119",   video:"https://www.youtube.com/watch?v=1IPgeBMqOkE",  agent:"Souleymane Correia",           comment:"End of contract June 2028 – Check with Neom KSA",                  target:"NEOM ou autres clubs saoudiens" },
+  { id:'s6',  name:"Oumar Deme",       dob:"2 Feb 2005",  year:2005, club:"Falcon FC",           league:"Third Division League",       country:"United Arab Emirates", position:"Centre Back / Central Midfielder Defensive",   height:"N/A",   nationality:"France",    tm:"https://www.transfermarkt.co.uk/oumar-deme/profil/spieler/1119936",  video:"https://www.youtube.com/watch?v=3PREnpOduJA",  agent:"Souleymane Sylla",             comment:"Not represented",                                                   target:"CSM Oissel" },
+  { id:'s7',  name:"Tidiane Diomande", dob:"31 May 2004", year:2004, club:"Nimes Olympique B",   league:"Regional 1",                  country:"France",               position:"Midfielder",                                   height:"N/A",   nationality:"France",    tm:"https://www.transfermarkt.com/tidiane-diomande/profil/spieler/1512987",video:"https://www.youtube.com/watch?v=EF6sFAJwqxY", agent:"Souleymane Sylla / Mentis",    comment:"Represented by Mentis",                                             target:"Chercher un club de National 2" },
+  { id:'s8',  name:"Ebrahim Kinte",    dob:"15 Aug 2005", year:2005, club:"Arabian Falcons",     league:"Second Division League",      country:"United Arab Emirates", position:"Striker / Centre Forward",                    height:"N/A",   nationality:"Gambia",    tm:"https://www.besoccer.com/player/ebrima-kinteh-3703535",              video:"",                                             agent:"Souleymane Sylla",             comment:"23 Matchs / 9 buts – Was in trial in Europe (RWDM Brussels)",      target:"" },
+  { id:'s9',  name:"Muhammed Krubally",dob:"10 Feb 2006", year:2006, club:"Arabian Falcons",     league:"Second Division League",      country:"United Arab Emirates", position:"Defensive Midfielder",                         height:"N/A",   nationality:"Gambia",    tm:"https://www.besoccer.com/player/muhammed-krubally-3703530",          video:"https://www.youtube.com/watch?v=CR-9-lYG5fA",  agent:"Souleymane Sylla",             comment:"",                                                                  target:"" },
+  { id:'s10', name:"Clement Bassin",   dob:"11 Dec 1994", year:1994, club:"FC Rouen",            league:"National",                    country:"France",               position:"Left Back",                                    height:"N/A",   nationality:"France",    tm:"https://www.transfermarkt.com/clement-bassin/profil/spieler/601760", video:"",                                             agent:"Alasanne Ndiaye",              comment:"",                                                                  target:"" },
+  { id:'s11', name:"Nassim Titebah",   dob:"13 Jan 1998", year:1998, club:"FC Rouen",            league:"National",                    country:"France",               position:"Right Back",                                   height:"1.81m", nationality:"Morocco",   tm:"https://www.transfermarkt.com/nassim-titebah/profil/spieler/800416", video:"",                                             agent:"Alasanne Ndiaye",              comment:"",                                                                  target:"" },
+  { id:'s12', name:"Karl Ehouman",     dob:"23 Apr 2001", year:2001, club:"CMS Oissel",          league:"N3-Groupe D",                 country:"France",               position:"Midfielder",                                   height:"N/A",   nationality:"France",    tm:"https://www.transfermarkt.com/karl-ehouman/profil/spieler/1175360",  video:"",                                             agent:"Souleymane Sylla / Adama Sidibe",comment:"",                                                                target:"" },
+  { id:'s13', name:"Abou Ballo",       dob:"7 Apr 1998",  year:1998, club:"SGV Freigberg",       league:"Regionalliga Sudwest",        country:"Germany",              position:"Left Back / Left Winger",                      height:"1.83m", nationality:"France",    tm:"https://www.transfermarkt.com/abou-ballo/profil/spieler/688312",     video:"",                                             agent:"Souleymane Sylla",             comment:"",                                                                  target:"" },
+  { id:'s14', name:"Ahmadou Camara",   dob:"",            year:2009, club:"Racing CFF U17",      league:"U17 Nationaux",               country:"France",               position:"—",                                            height:"N/A",   nationality:"France",    tm:"https://www.transfermarkt.fr/ahmadou-camara/profil/spieler/1545688", video:"",                                             agent:"Souleymane Sylla",             comment:"",                                                                  target:"" },
+  { id:'s15', name:"Maguette Samb",    dob:"3 Jan 2003",  year:2003, club:"Evian Thonon",        league:"N3-Groupe F",                 country:"France",               position:"Striker / Centre Forward",                    height:"N/A",   nationality:"France",    tm:"https://www.transfermarkt.fr/maguette-samb/profil/spieler/1073013",  video:"https://www.youtube.com/watch?v=3D4BNKvH504",  agent:"Alasanne Ndiaye",              comment:"Represented by an agent – End of representation agreement June 26",target:"" },
+  { id:'s16', name:"Abdoullah Ba",     dob:"31 Jul 2003", year:2003, club:"Sunderland",          league:"Premier League",              country:"England",              position:"Midfielder",                                   height:"1.80m", nationality:"France",    tm:"https://www.transfermarkt.com/abdoullah-ba/profil/spieler/654412",   video:"https://www.youtube.com/watch?v=1k-8dTctw24",  agent:"Hamady Gueye",                 comment:"End of contract June 2027 – Represented by Sports Cover",          target:"" },
+  { id:'s17', name:"Yasser Larouci",   dob:"1 Jan 2001",  year:2001, club:"Kifisia",             league:"Super League 1",              country:"Greece",               position:"Left Back",                                    height:"1.76m", nationality:"Algeria",   tm:"https://www.transfermarkt.com/yasser-larouci/profil/spieler/554251",  video:"",                                             agent:"Hamady Gueye",                 comment:"Loan by Troyes – Represented by Tim Pole",                         target:"" },
+  { id:'s18', name:"Isaak Touré",      dob:"28 Mar 2003", year:2003, club:"FC Lorient",          league:"Ligue 1",                     country:"France",               position:"Centre Back",                                  height:"2.06m", nationality:"France",    tm:"https://www.transfermarkt.com/isaak-toure/profil/spieler/708678",    video:"https://www.youtube.com/watch?v=RS6Wfi4pSI0",  agent:"Hamady Gueye",                 comment:"Represented by ND Sports Management",                               target:"" },
+  { id:'s19', name:"Arouna Sangante",  dob:"12 Apr 2002", year:2002, club:"Le Havre",            league:"Ligue 1",                     country:"France",               position:"Centre Back",                                  height:"1.89m", nationality:"Senegal",   tm:"https://www.transfermarkt.com/arouna-sangante/profil/spieler/768380",video:"https://www.youtube.com/watch?v=HOcO3WtP5EQ",  agent:"Souleymane Correia",           comment:"End of contract June 2026 – Already in touch with Sevilla FC",     target:"" },
+  { id:'s20', name:"Adama Niakate",    dob:"15 Dec 2000", year:2000, club:"Istres",              league:"N2-Groupe C",                 country:"France",               position:"Defensive Midfielder",                         height:"1.66m", nationality:"France",    tm:"https://www.transfermarkt.fr/adama-niakate/profil/spieler/976857",   video:"https://www.youtube.com/watch?v=F5X7bzghQQA",  agent:"Souleymane Correia",           comment:"Not represented",                                                   target:"Creteil Lusitanos" },
+  { id:'s21', name:"Amir Etien",       dob:"18 Oct 2001", year:2001, club:"FC Versailles",       league:"National",                    country:"France",               position:"Right Winger",                                 height:"N/A",   nationality:"France",    tm:"https://www.transfermarkt.us/amir-etien/profil/spieler/1235595",     video:"",                                             agent:"Alasanne Ndiaye",              comment:"Not represented",                                                   target:"" },
+  { id:'s22', name:"Charles Pickel",   dob:"15 May 1997", year:1997, club:"Espanyol Barcelona",  league:"LaLiga",                      country:"Spain",                position:"Defensive Midfielder",                         height:"1.87m", nationality:"RD Congo",  tm:"https://www.transfermarkt.com/charles-pickel/profil/spieler/243879", video:"https://www.youtube.com/watch?v=oNuA5uAGX5E",  agent:"Harouna Abou Demba",           comment:"Not represented",                                                   target:"" },
+  { id:'s23', name:"Mathéo Tyburn",    dob:"3 Jul 2005",  year:2005, club:"CMS Oissel",          league:"N3-Groupe D",                 country:"France",               position:"Defensive Midfielder",                         height:"1.92m", nationality:"France",    tm:"https://www.transfermarkt.co.za/matheo-tyburn/profil/spieler/1421242",video:"",                                            agent:"Alasanne Ndiaye / Adama Sidibe",comment:"Not represented",                                                   target:"" },
+  { id:'s24', name:"Yann Gboho",       dob:"14 Jan 2001", year:2001, club:"Toulouse FC",         league:"Ligue 1",                     country:"France",               position:"Left Winger",                                  height:"1.78m", nationality:"France",    tm:"https://www.transfermarkt.us/yann-gboho/profil/spieler/463613",      video:"https://www.youtube.com/watch?v=uYPiv5f_uAA",  agent:"Alasanne Ndiaye",              comment:"Represented by ND Sports Management",                               target:"" },
+  // — Onglet 2 —
+  { id:'s25', name:"Nazim Babaï",          dob:"14 Jan 2003", year:2003, club:"AS Monaco U21",    league:"",               country:"France",               position:"Right Back",       height:"1.71m", nationality:"France / Algérie", tm:"https://www.transfermarkt.com/nazim-babai/profil/spieler/745177",           video:"", agent:"Harouna",        comment:"Released by AS Monaco – Regarder avec Harouna pour avoir le contact du joueur",            target:"" },
+  { id:'s26', name:"Kamron Dimata-Gomis",  dob:"4 May 2008",  year:2008, club:"AS Monaco U19",   league:"",               country:"France",               position:"Defender",         height:"N/A",   nationality:"France",          tm:"https://www.transfermarkt.com/kamron-dimata-gomis/profil/spieler/1205618",  video:"", agent:"À confirmer", comment:"Released by AS Monaco – Ancien de QRM – Né à Saint Aubin Les Elbeuf – Regarder avec Alasanne pour avoir le contact du joueur", target:"" },
+  { id:'s27', name:"Ackah-Tidiane Zoukrou",dob:"13 Sep 2008", year:2008, club:"AS Monaco U19",   league:"",               country:"France",               position:"Left Back",        height:"N/A",   nationality:"France",          tm:"https://www.transfermarkt.com/ackah-tidiane-zoukrou/profil/spieler/1205629",video:"", agent:"À confirmer", comment:"Released by AS Monaco – Ancien d'US Torcy – Je m'en occupe",                              target:"" },
+  { id:'s28', name:"Abdoulaye Camara",     dob:"10 Feb 2008", year:2008, club:"OGC Nice U19",    league:"",               country:"Mauritanie",           position:"Midfielder",       height:"N/A",   nationality:"Mauritanie",      tm:"https://www.transfermarkt.com/aboulaye-camara/profil/spieler/1334469",      video:"", agent:"Harouna",        comment:"Regarder avec Harouna pour avoir le contact du joueur",                                    target:"" },
+  { id:'s29', name:"Idriss Soumaré",       dob:"8 May 2007",  year:2007, club:"QRM U19",         league:"",               country:"France",               position:"Defender",         height:"N/A",   nationality:"France",          tm:"https://www.transfermarkt.com/idriss-soumare/profil/spieler/1306558",       video:"", agent:"Alassane",       comment:"21 matchs sur 24 / 2 buts – Né à Mont Saint Aignan – Regarder avec Alasanne pour avoir le contact du joueur", target:"" },
+  { id:'s30', name:"Florian Mékué Ndiaye", dob:"23 Apr 2008", year:2008, club:"Clermont U19",    league:"",               country:"France",               position:"Centre Forward",   height:"N/A",   nationality:"France",          tm:"https://www.transfermarkt.com/florian-mekue/profil/spieler/1227098",        video:"", agent:"À confirmer", comment:"Released by Clermont – 21 matchs / 10 buts – Formé à Val de Reuil (2015-2023) – Regarder avec Harouna sur Instagram: https://www.instagram.com/f.mekue19/", target:"" },
+];
+
+const FLAG_CODES = {
+  "France":"fr","Senegal":"sn","Mali":"ml","Ivory Coast":"ci","Nigeria":"ng",
+  "Gambia":"gm","Morocco":"ma","Algeria":"dz","RD Congo":"cd","Spain":"es",
+  "Italy":"it","Germany":"de","England":"gb-eng","Greece":"gr","Turkey":"tr",
+  "Oman":"om","UAE":"ae","United Arab Emirates":"ae","Portugal":"pt","Belgium":"be",
+  "Netherlands":"nl","Brazil":"br","Argentina":"ar","Cameroon":"cm","Ghana":"gh",
+  "Guinea":"gn","Tunisia":"tn","Egypt":"eg","Saudi Arabia":"sa",
+  "Mauritanie":"mr","Mauritania":"mr",
+  "France / Algérie":"fr","France/Algerie":"fr",
+  "United Kingdom":"gb","Scotland":"gb-sct","Wales":"gb-wls"
+};
+const CLUB_LOGOS = {
+  "Erzurumspor FK":"https://upload.wikimedia.org/wikipedia/tr/thumb/3/3e/BB_Erzurumspor_logo.png/200px-BB_Erzurumspor_logo.png",
+  "Juve Stabia":"https://upload.wikimedia.org/wikipedia/commons/thumb/3/35/S.S._Juve_Stabia.png/200px-S.S._Juve_Stabia.png",
+  "FC Rouen":"https://upload.wikimedia.org/wikipedia/commons/thumb/c/c7/FC_Rouen_logo.svg/200px-FC_Rouen_logo.svg.png",
+  "Sunderland":"https://upload.wikimedia.org/wikipedia/en/thumb/7/77/Sunderland_AFC_logo.svg/200px-Sunderland_AFC_logo.svg.png",
+  "FC Lorient":"https://upload.wikimedia.org/wikipedia/commons/thumb/7/76/FC_Lorient_logo.svg/200px-FC_Lorient_logo.svg.png",
+  "Le Havre":"https://upload.wikimedia.org/wikipedia/commons/thumb/3/38/HAC_logo_%282010%29.svg/200px-HAC_logo_%282010%29.svg.png",
+  "Espanyol Barcelona":"https://upload.wikimedia.org/wikipedia/commons/thumb/7/76/RCD_Espanyol_de_Barcelona.svg/200px-RCD_Espanyol_de_Barcelona.svg.png",
+  "Toulouse FC":"https://upload.wikimedia.org/wikipedia/commons/thumb/3/34/Toulouse_FC_2018.svg/200px-Toulouse_FC_2018.svg.png",
+};
+
+function flagEmoji(code) {
+  if (!code) return '';
+  // Convert ISO code to emoji flag (works everywhere)
+  const c = code.toUpperCase().replace('GB-ENG','GB').replace('GB-SCT','GB').replace('GB-WLS','GB');
+  return c.split('').map(ch => String.fromCodePoint(0x1F1E6 + ch.charCodeAt(0) - 65)).join('');
+}
+function flag(nat) {
+  const c = FLAG_CODES[nat];
+  if (!c) return '';
+  const emoji = flagEmoji(c);
+  return `<span style="font-size:16px;line-height:1" title="${nat}">${emoji}</span>`;
+}
+function logo(club) { const u=CLUB_LOGOS[club]; return u?`<img src="${u}" onerror="this.style.display='none';this.parentElement.innerHTML='🏟️'" alt="${club}" style="width:30px;height:30px;object-fit:contain">`:'🏟️'; }
+function age(y){ return 2026-y; }
+function uid(){ return 'u'+Date.now()+Math.random().toString(36).slice(2,6); }
+
+// ==============================
+// STATE
+// ==============================
+let customPlayers = JSON.parse(localStorage.getItem('cp_v2')||'[]');
+let allPlayers = ()=>[...STATIC_PLAYERS,...customPlayers];
+
+let playerCats = JSON.parse(localStorage.getItem('playerCats')||JSON.stringify([
+  {id:'p_all',label:'🗂 Tous',icon:'',deletable:false},
+  {id:'p1',label:'🥇 Priorité 1',icon:'',deletable:false},
+  {id:'p2',label:'🥈 Priorité 2',icon:'',deletable:false},
+  {id:'p3',label:'🥉 Priorité 3',icon:'',deletable:false},
+  {id:'p_followup',label:'👁 À suivre',icon:'',deletable:false},
+  {id:'p_archive',label:'📦 Archive',icon:'archive',deletable:false},
+]));
+let clubCats = JSON.parse(localStorage.getItem('clubCats')||JSON.stringify([
+  {id:'c_all',label:'🗂 Tous',icon:'',deletable:false},
+  {id:'c1',label:'🥇 Priorité 1',icon:'',deletable:false},
+  {id:'c2',label:'🥈 Priorité 2',icon:'',deletable:false},
+  {id:'c3',label:'🥉 Priorité 3',icon:'',deletable:false},
+  {id:'c_archive',label:'📦 Archive',icon:'archive',deletable:false},
+]));
+
+let playerCatAssign = JSON.parse(localStorage.getItem('playerCatAssign')||'{}');
+let clubCatAssign   = JSON.parse(localStorage.getItem('clubCatAssign')||'{}');
+let clubs = JSON.parse(localStorage.getItem('clubs_v2')||'[]');
+let todos = JSON.parse(localStorage.getItem('todos_v2')||'[]');
+
+// Lineup
+let lineup = JSON.parse(localStorage.getItem('lineup_v2')||'{"formation":"4-3-3","slots":{},"subs":[]}');
+
+let activePCat = 'p_all';
+let activeCCat = 'c_all';
+let dragItem = null;
+let dragType = null;
+let pendingClubId = null;
+let pickerTarget = null; // {type:'slot'|'sub', index:number}
+let currentReqPlayer = null;
+let addCatType = null;
+
+function save(key,val){ localStorage.setItem(key,JSON.stringify(val)); }
+function saveAll(){
+  save('cp_v2',customPlayers);
+  save('playerCats',playerCats);
+  save('clubCats',clubCats);
+  save('playerCatAssign',playerCatAssign);
+  save('clubCatAssign',clubCatAssign);
+  save('clubs_v2',clubs);
+  save('todos_v2',todos);
+  save('lineup_v2',lineup);
+}
+
+// ==============================
+// CATEGORIES SIDEBAR
+// ==============================
+function renderCatList(type){
+  const cats = type==='player'?playerCats:clubCats;
+  const activeCat = type==='player'?activePCat:activeCCat;
+  const assign = type==='player'?playerCatAssign:clubCatAssign;
+  const items = type==='player'?allPlayers():clubs;
+  const el = document.getElementById(type==='player'?'player-cat-list':'club-cat-list');
+
+  // Count per cat
+  const counts = {};
+  cats.forEach(c=>{ counts[c.id]=0; });
+  items.forEach(item=>{
+    const cat = assign[item.id]||'p_all';
+    if(type==='player'){
+      if(counts[cat]!==undefined) counts[cat]++;
+      if(cat!=='p_archive') counts['p_all']=(counts['p_all']||0)+1;
+    } else {
+      const ccat = assign[item.id]||'c_all';
+      if(counts[ccat]!==undefined) counts[ccat]++;
+      if(ccat!=='c_archive') counts['c_all']=(counts['c_all']||0)+1;
+    }
+  });
+  // recount all
+  if(type==='player'){
+    counts['p_all'] = items.filter(p=>(assign[p.id]||'p_all')!=='p_archive').length;
+  } else {
+    counts['c_all'] = items.filter(c=>(assign[c.id]||'c_all')!=='c_archive').length;
+  }
+
+  el.innerHTML = cats.map(c=>`
+    <div class="cat-item ${c.icon==='archive'?'archive-cat':''} ${activeCat===c.id?'active':''}"
+      onclick="setCat('${type}','${c.id}')">
+      <span>${c.label} <span class="cat-count">${counts[c.id]||0}</span></span>
+      ${c.deletable?`<button class="cat-delete" onclick="event.stopPropagation();deleteCat('${type}','${c.id}')">✕</button>`:''}
+    </div>`).join('');
+}
+
+function setCat(type, id){
+  if(type==='player'){ activePCat=id; renderPlayers(); }
+  else { activeCCat=id; renderClubs(); }
+  renderCatList(type);
+}
+
+function addCategory(type){
+  addCatType=type;
+  document.getElementById('cat-input').value='';
+  document.getElementById('cat-mini').classList.add('open');
+  setTimeout(()=>document.getElementById('cat-input').focus(),100);
+}
+
+function confirmAddCategory(){
+  const label = document.getElementById('cat-input').value.trim();
+  if(!label) return;
+  const id = uid();
+  const cat = {id, label:'🏷 '+label, icon:'', deletable:true};
+  if(addCatType==='player') playerCats.splice(playerCats.length-1,0,cat);
+  else clubCats.splice(clubCats.length-1,0,cat);
+  saveAll();
+  closeModal('cat-mini');
+  renderCatList(addCatType);
+  showToast(`Catégorie "${label}" créée ✓`);
+}
+
+function deleteCat(type, id){
+  if(!confirm('Supprimer cette catégorie ?')) return;
+  if(type==='player'){
+    playerCats = playerCats.filter(c=>c.id!==id);
+    Object.keys(playerCatAssign).forEach(k=>{ if(playerCatAssign[k]===id) delete playerCatAssign[k]; });
+  } else {
+    clubCats = clubCats.filter(c=>c.id!==id);
+    Object.keys(clubCatAssign).forEach(k=>{ if(clubCatAssign[k]===id) delete clubCatAssign[k]; });
+  }
+  saveAll();
+  renderCatList(type);
+  if(type==='player') renderPlayers();
+  else renderClubs();
+}
+
+// ==============================
+// DRAG & DROP
+// ==============================
+function onDragStart(e, id, type){
+  dragItem=id; dragType=type;
+  setTimeout(()=>{ const el=document.querySelector(`[data-id="${id}"]`); if(el) el.classList.add('dragging'); },0);
+}
+function onDragEnd(e){
+  document.querySelectorAll('.dragging').forEach(el=>el.classList.remove('dragging'));
+  dragItem=null; dragType=null;
+}
+function onDragOver(e, type){
+  e.preventDefault();
+  e.currentTarget.classList.add('drag-over');
+}
+function onDragLeave(e){ e.currentTarget.classList.remove('drag-over'); }
+function onDrop(e, type){
+  e.preventDefault();
+  e.currentTarget.classList.remove('drag-over');
+  if(!dragItem) return;
+  const targetCat = type==='player'?activePCat:activeCCat;
+  if(type==='player') playerCatAssign[dragItem]=targetCat;
+  else clubCatAssign[dragItem]=targetCat;
+  saveAll();
+  renderCatList(type);
+  if(type==='player') renderPlayers();
+  else renderClubs();
+  showToast('Déplacé ✓');
+}
+
+// ==============================
+// PLAYERS
+// ==============================
+function renderPlayers(){
+  const q=(document.getElementById('p-search').value||'').toLowerCase();
+  const grid=document.getElementById('player-grid');
+  let list=allPlayers().filter(p=>{
+    const cat=playerCatAssign[p.id]||'p_all';
+    if(activePCat==='p_all') return cat!=='p_archive';
+    return cat===activePCat;
+  }).filter(p=>!q||[p.name,p.club,p.position,p.nationality,p.league].join(' ').toLowerCase().includes(q));
+
+  const catLabel=playerCats.find(c=>c.id===activePCat)?.label||'Tous';
+  document.getElementById('p-section-title').textContent=catLabel;
+  document.getElementById('p-count').textContent=`${list.length} joueur${list.length!==1?'s':''}`;
+
+  if(!list.length){
+    grid.innerHTML='<div class="empty"><div class="empty-icon">⚽</div>Aucun joueur dans cette catégorie.<br><small>Glissez une carte ici pour l\'y déplacer.</small></div>';
+    return;
+  }
+  grid.innerHTML=list.map(p=>{
+    const isCustom=customPlayers.find(c=>c.id===p.id);
+    const logoURL=CLUB_LOGOS[p.club];
+    return `<div class="player-card" data-id="${p.id}" draggable="true"
+      ondragstart="onDragStart(event,'${p.id}','player')"
+      ondragend="onDragEnd(event)">
+      <div class="card-top">
+        <div class="card-top-left">
+          <div class="club-logo-wrap">${logoURL?`<img src="${logoURL}" alt="${p.club}" onerror="this.parentElement.innerHTML='🏟️'" style="width:30px;height:30px;object-fit:contain">`:'🏟️'}</div>
+          <div><div class="player-name">${p.name}</div><div class="player-pos">${p.position}</div></div>
+        </div>
+        <div class="badges">
+          <span class="badge badge-year">${p.year} · ${age(p.year)}y</span>
+          <span class="badge badge-nat">${flag(p.nationality)||p.nationality}</span>
+        </div>
+      </div>
+      <div class="card-meta">
+        <div class="meta-item"><div class="meta-label">Club</div><div class="meta-val">${p.club}</div></div>
+        <div class="meta-item"><div class="meta-label">Ligue</div><div class="meta-val">${p.league}</div></div>
+        <div class="meta-item"><div class="meta-label">Taille</div><div class="meta-val">${p.height||'N/A'}</div></div>
+        <div class="meta-item"><div class="meta-label">Agent / Intermédiaire</div><div class="meta-val">${p.agent}</div></div>
+      </div>
+      ${p.comment?`<div class="card-comment"><span style="font-size:9px;text-transform:uppercase;letter-spacing:1px;color:var(--grass);font-weight:700;display:block;margin-bottom:3px">Commentaires</span>${p.comment}${p.target?` · <strong style="color:var(--gold)">${p.target}</strong>`:''}</div>`:p.target?`<div class="card-comment"><strong style="color:var(--gold)">${p.target}</strong></div>`:''}
+      ${scoutBarHTML(p.id)}
+      ${stepBadgeHTML(p.id)}
+      <div class="card-actions">
+        ${p.tm?`<a class="btn-tm" href="${p.tm}" target="_blank">🔗 TM</a>`:'<span style="flex:1"></span>'}
+        ${p.video?`<a class="btn-video" href="${p.video}" target="_blank">▶ Vidéo</a>`:''}
+        <button class="btn-scout" onclick="openScoutModal('${p.id}')">🎯 Scout</button>
+        <button class="btn-request" onclick="openRequest(event,'${p.id}')">✉</button>
+        ${isCustom?`<button class="btn-del" onclick="deletePlayer(event,'${p.id}')">🗑</button>`:''}
+      </div>
+    </div>`;
+  }).join('');
+  updateStats();
+}
+
+function openPlayerModal(){
+  ['pm-name','pm-year','pm-nat','pm-pos','pm-club','pm-league','pm-country','pm-height','pm-agent','pm-dob','pm-tm','pm-video','pm-comment','pm-target'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('player-modal').classList.add('open');
+}
+function savePlayer(){
+  const name=document.getElementById('pm-name').value.trim();
+  const year=parseInt(document.getElementById('pm-year').value);
+  const nat=document.getElementById('pm-nat').value.trim();
+  const pos=document.getElementById('pm-pos').value.trim();
+  if(!name||!year||!nat||!pos){alert('Remplissez nom, année, nationalité et poste.');return;}
+  const p={id:uid(),name,year,nationality:nat,position:pos,
+    dob:document.getElementById('pm-dob').value.trim(),
+    height:document.getElementById('pm-height').value.trim()||'N/A',
+    club:document.getElementById('pm-club').value.trim()||'—',
+    league:document.getElementById('pm-league').value.trim()||'—',
+    country:document.getElementById('pm-country').value.trim()||'—',
+    agent:document.getElementById('pm-agent').value.trim()||'—',
+    tm:document.getElementById('pm-tm').value.trim(),
+    video:document.getElementById('pm-video').value.trim(),
+    comment:document.getElementById('pm-comment').value.trim(),
+    target:document.getElementById('pm-target').value.trim()};
+  customPlayers.push(p);
+  saveAll(); closeModal('player-modal'); renderPlayers(); renderCatList('player');
+  showToast(`${name} ajouté ✓`);
+}
+function deletePlayer(e,id){
+  e.stopPropagation();
+  const p=allPlayers().find(x=>x.id===id);
+  if(!confirm(`Supprimer ${p?.name} ?`)) return;
+  customPlayers=customPlayers.filter(x=>x.id!==id);
+  delete playerCatAssign[id];
+  saveAll(); renderPlayers(); renderCatList('player');
+}
+
+// ==============================
+// CLUBS
+// ==============================
+function renderClubs(){
+  const q=(document.getElementById('c-search').value||'').toLowerCase();
+  const grid=document.getElementById('club-grid');
+  let list=clubs.filter(c=>{
+    const cat=clubCatAssign[c.id]||'c_all';
+    if(activeCCat==='c_all') return cat!=='c_archive';
+    return cat===activeCCat;
+  }).filter(c=>!q||[c.name,c.league,c.country].join(' ').toLowerCase().includes(q));
+
+  const catLabel=clubCats.find(c=>c.id===activeCCat)?.label||'Tous';
+  document.getElementById('c-section-title').textContent=catLabel;
+  document.getElementById('c-count').textContent=`${list.length} club${list.length!==1?'s':''}`;
+
+  if(!list.length){
+    grid.innerHTML=`<div class="empty"><div class="empty-icon">🏟️</div>${clubs.length===0?'Aucun club. Cliquez sur <strong>+ Ajouter club</strong>.':'Aucun club dans cette catégorie.'}</div>`;
+    return;
+  }
+  grid.innerHTML=list.map(c=>{
+    const cc=FLAG_CODES[c.country];
+    const cflag=cc?`<span style="font-size:14px" title="${c.country}">${flagEmoji(cc)}</span>`:'';
+    return `<div class="club-card" data-id="${c.id}" draggable="true"
+      ondragstart="onDragStart(event,'${c.id}','club')"
+      ondragend="onDragEnd(event)">
+      <div class="club-card-header">
+        <div class="club-card-logo">🏟️</div>
+        <div>
+          <div class="club-card-name">${c.name}</div>
+          ${c.league?`<div class="club-card-league">${c.league}</div>`:''}
+          ${c.country?`<div class="club-card-country">${cflag} ${c.country}</div>`:''}
+          ${c.contact?`<div style="font-size:11px;color:var(--muted);margin-top:2px">👤 ${c.contact}</div>`:''}
+        </div>
+      </div>
+      ${c.notes?`<div class="card-comment" style="margin-bottom:10px">${c.notes}</div>`:''}
+      <div class="profiles-label">Profils recherchés</div>
+      <div class="profiles-list">${c.profiles&&c.profiles.length?c.profiles.map((pr,pi)=>`<span class="profile-tag">${pr}<button onclick="deleteProfile('${c.id}',${pi})">✕</button></span>`).join(''):'<span style="font-size:11px;color:var(--muted)">Aucun profil</span>'}</div>
+      <div class="club-card-actions">
+        <button class="btn-add-profile" onclick="openProfileMini('${c.id}')">+ Profil</button>
+        <button class="btn-del-club" onclick="deleteClub('${c.id}')">🗑</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function openClubModal(){
+  ['cm-name','cm-league','cm-country','cm-contact','cm-notes'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('club-modal').classList.add('open');
+}
+function saveClub(){
+  const name=document.getElementById('cm-name').value.trim();
+  if(!name){alert('Le nom du club est requis.');return;}
+  clubs.push({id:uid(),name,league:document.getElementById('cm-league').value.trim(),country:document.getElementById('cm-country').value.trim(),contact:document.getElementById('cm-contact').value.trim(),notes:document.getElementById('cm-notes').value.trim(),profiles:[]});
+  saveAll(); closeModal('club-modal'); renderClubs(); renderCatList('club');
+  showToast(`${name} ajouté ✓`);
+}
+function deleteClub(id){
+  const c=clubs.find(x=>x.id===id);
+  if(!confirm(`Supprimer ${c?.name} ?`)) return;
+  clubs=clubs.filter(x=>x.id!==id);
+  delete clubCatAssign[id];
+  saveAll(); renderClubs(); renderCatList('club');
+}
+function openProfileMini(id){ pendingClubId=id; document.getElementById('profile-input').value=''; document.getElementById('profile-mini').classList.add('open'); setTimeout(()=>document.getElementById('profile-input').focus(),100); }
+function saveProfile(){
+  const val=document.getElementById('profile-input').value.trim(); if(!val) return;
+  const c=clubs.find(x=>x.id===pendingClubId); if(!c) return;
+  if(!c.profiles) c.profiles=[];
+  c.profiles.push(val); saveAll(); closeModal('profile-mini'); renderClubs();
+}
+function deleteProfile(clubId,pi){
+  const c=clubs.find(x=>x.id===clubId); if(!c) return;
+  c.profiles.splice(pi,1); saveAll(); renderClubs();
+}
+
+// ==============================
+// TO DO
+// ==============================
+function addTodo(){
+  const input=document.getElementById('todo-input'); const text=input.value.trim(); if(!text) return;
+  todos.unshift({id:uid(),text,priority:document.getElementById('todo-pri').value,done:false});
+  saveAll(); input.value=''; renderTodos();
+}
+function toggleTodo(id){ todos=todos.map(t=>t.id===id?{...t,done:!t.done}:t); saveAll(); renderTodos(); }
+function deleteTodo(id){ todos=todos.filter(t=>t.id!==id); saveAll(); renderTodos(); }
+function renderTodos(){
+  const c=document.getElementById('todo-list');
+  if(!todos.length){c.innerHTML='<div class="todo-empty">Aucune tâche. Ajoutez-en une ☝️</div>';return;}
+  const pending=todos.filter(t=>!t.done); const done=todos.filter(t=>t.done);
+  let html='';
+  if(pending.length) html+=`<div class="todo-sec-lbl">En cours (${pending.length})</div>`+pending.map(t=>`<div class="todo-item${t.done?' done':''}"><div class="prio-dot ${t.priority}"></div><div class="todo-check" onclick="toggleTodo('${t.id}')">${t.done?'✓':''}</div><div class="todo-text">${t.text}</div><button class="todo-del" onclick="deleteTodo('${t.id}')">✕</button></div>`).join('');
+  if(done.length) html+=`<div class="todo-sec-lbl" style="margin-top:20px">Terminées (${done.length})</div>`+done.map(t=>`<div class="todo-item done"><div class="prio-dot ${t.priority}"></div><div class="todo-check done" onclick="toggleTodo('${t.id}')">✓</div><div class="todo-text">${t.text}</div><button class="todo-del" onclick="deleteTodo('${t.id}')">✕</button></div>`).join('');
+  c.innerHTML=html;
+}
+
+// ==============================
+// 11 TYPE / LINEUP
+// ==============================
+const FORMATIONS = {
+  '4-3-3': [['GK'],['LB','CB','CB','RB'],['LM','CM','RM'],['LW','ST','RW']],
+  '4-4-2': [['GK'],['LB','CB','CB','RB'],['LM','CM','CM','RM'],['ST','ST']],
+  '4-2-3-1': [['GK'],['LB','CB','CB','RB'],['CDM','CDM'],['LAM','CAM','RAM'],['ST']],
+  '3-5-2': [['GK'],['CB','CB','CB'],['LWB','CM','CM','CM','RWB'],['ST','ST']],
+  '5-3-2': [['GK'],['LWB','CB','CB','CB','RWB'],['LM','CM','RM'],['ST','ST']],
+  '3-4-3': [['GK'],['CB','CB','CB'],['LM','CM','CM','RM'],['LW','ST','RW']],
+  '4-5-1': [['GK'],['LB','CB','CB','RB'],['LM','LCM','CM','RCM','RM'],['ST']],
+};
+
+function changeFormation(){
+  lineup.formation=document.getElementById('formation-select').value;
+  lineup.slots={};
+  saveAll(); renderPitch();
+}
+
+function renderPitch(){
+  const form=lineup.formation||'4-3-3';
+  document.getElementById('formation-select').value=form;
+  const rows=FORMATIONS[form]||FORMATIONS['4-3-3'];
+  // Reverse so GK at bottom visually
+  const reversed=[...rows].reverse();
+  const grid=document.getElementById('pitch-grid');
+  grid.innerHTML=reversed.map((row,ri)=>`
+    <div class="pitch-row">
+      ${row.map((pos,pi)=>{
+        const slotKey=`${ri}_${pi}`;
+        const pid=lineup.slots[slotKey];
+        const player=pid?allPlayers().find(p=>p.id===pid):null;
+        return `<div class="player-slot ${player?'filled':''}" onclick="openPicker('slot','${slotKey}')">
+          <div class="slot-circle">
+            ${player?player.name.split(' ')[0].charAt(0)+player.name.split(' ').slice(-1)[0].charAt(0):''}
+            ${player?`<button class="remove-slot" onclick="event.stopPropagation();removeSlot('${slotKey}')">✕</button>`:''}
+          </div>
+          <div class="slot-name">${player?player.name.split(' ').slice(-1)[0]:''}</div>
+          <div class="slot-pos">${pos}</div>
+        </div>`;
+      }).join('')}
+    </div>`).join('');
+  renderSubs();
+}
+
+function removeSlot(key){ delete lineup.slots[key]; saveAll(); renderPitch(); }
+
+function renderSubs(){
+  const list=document.getElementById('subs-list');
+  let html=(lineup.subs||[]).map((pid,i)=>{
+    const p=allPlayers().find(x=>x.id===pid);
+    return p?`<div class="sub-card filled">
+      <div class="sub-num">${i+1}</div>
+      <div class="sub-info"><div class="sub-name">${p.name}</div><div class="sub-pos">${p.position}</div></div>
+      <button class="sub-remove" onclick="removeSub(${i})">✕</button>
+    </div>`:'';
+  }).join('');
+  html+=`<button class="btn-add-sub-inline" onclick="openPicker('sub',-1)">+ Remplaçant</button>`;
+  list.innerHTML=html;
+}
+
+function removeSub(i){ lineup.subs.splice(i,1); saveAll(); renderSubs(); }
+
+// PICKER
+function openPicker(type, index){
+  pickerTarget={type,index};
+  document.getElementById('picker-title').textContent = type==='sub'?'Choisir un remplaçant':'Choisir un joueur';
+  document.getElementById('picker-search').value='';
+  renderPickerList();
+  document.getElementById('player-picker').classList.add('open');
+}
+function closePicker(){ document.getElementById('player-picker').classList.remove('open'); pickerTarget=null; }
+
+function renderPickerList(){
+  const q=document.getElementById('picker-search').value.toLowerCase();
+  const list=allPlayers().filter(p=>!q||p.name.toLowerCase().includes(q)||p.position.toLowerCase().includes(q));
+  document.getElementById('picker-list').innerHTML=list.map(p=>`
+    <div class="picker-item" onclick="selectPlayer('${p.id}')">
+      <div style="font-size:20px">${flag(p.nationality)||'👤'}</div>
+      <div><div class="pi-name">${p.name}</div><div class="pi-info">${p.position} · ${p.club}</div></div>
+    </div>`).join('');
+}
+
+function selectPlayer(pid){
+  if(!pickerTarget) return;
+  if(pickerTarget.type==='slot'){
+    lineup.slots[pickerTarget.index]=pid;
+  } else {
+    if(!lineup.subs) lineup.subs=[];
+    if(!lineup.subs.includes(pid)) lineup.subs.push(pid);
+  }
+  saveAll(); closePicker(); renderPitch();
+}
+
+// ==============================
+// REQUEST MODAL
+// ==============================
+function openRequest(e,id){
+  e.stopPropagation();
+  currentReqPlayer=allPlayers().find(p=>p.id===id);
+  if(!currentReqPlayer) return;
+  document.getElementById('req-player-name').textContent=`${currentReqPlayer.name} — ${currentReqPlayer.position}`;
+  ['req-club','req-league','req-type','req-msg'].forEach(i=>document.getElementById(i).value='');
+  if(currentReqPlayer.target) document.getElementById('req-club').value=currentReqPlayer.target;
+  document.getElementById('request-modal').classList.add('open');
+}
+function sendRequest(){
+  const club=document.getElementById('req-club').value.trim();
+  const type=document.getElementById('req-type').value;
+  if(!club||!type){alert('Remplissez le club et le type.');return;}
+  const reqs=JSON.parse(localStorage.getItem('requests')||'[]');
+  reqs.push({player:currentReqPlayer.name,club,league:document.getElementById('req-league').value.trim(),type,message:document.getElementById('req-msg').value.trim(),date:new Date().toLocaleDateString('fr-FR')});
+  localStorage.setItem('requests',JSON.stringify(reqs));
+  closeModal('request-modal'); showToast(`Demande envoyée : ${currentReqPlayer.name} → ${club}`);
+}
+
+// ==============================
+// AGE LIST
+// ==============================
+function renderAgeList(){
+  const sorted=[...allPlayers()].sort((a,b)=>b.year-a.year);
+  document.getElementById('age-count').textContent=`${sorted.length} joueurs`;
+  const tbody=document.getElementById('age-tbody');
+  let html=''; let lastDecade='';
+  sorted.forEach((p,i)=>{
+    const decade=Math.floor(p.year/10)*10+'s';
+    if(decade!==lastDecade){
+      lastDecade=decade;
+      html+=`<tr class="age-group-header"><td colspan="10">Nés dans les années ${decade}</td></tr>`;
+    }
+    // Split name into firstname + lastname, display as NOM Prénom
+    const parts = p.name.trim().split(' ');
+    const firstName = parts[0];
+    const lastName = parts.slice(1).join(' ');
+    const displayName = lastName
+      ? `<span style="font-weight:900;letter-spacing:0.5px">${lastName.toUpperCase()}</span> <span style="font-weight:400;color:var(--muted)">${firstName}</span>`
+      : `<span style="font-weight:900">${firstName.toUpperCase()}</span>`;
+    const f=FLAG_CODES[p.nationality];
+    const flagHtml=f?`<span style="font-size:16px" title="${p.nationality}">${flagEmoji(f)}</span>`:'';
+    html+=`<tr>
+      <td class="rank">${i+1}</td>
+      <td><div class="p-name">${displayName}</div></td>
+      <td><div class="p-age">${age(p.year)}</div></td>
+      <td style="color:var(--muted);font-size:12px">${p.dob||p.year}</td>
+      <td><div class="p-nat">${flagHtml}<span style="font-size:11px;color:var(--muted)">${p.nationality}</span></div></td>
+      <td style="font-size:12px;color:var(--muted)">${p.position}</td>
+      <td style="font-size:12px">${p.club}</td>
+      <td style="font-size:11px;color:var(--muted)">${p.league}</td>
+      <td style="font-size:11px;color:var(--muted);max-width:140px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${p.agent}">${p.agent}</td>
+      <td><div class="p-links">
+        ${p.tm?`<a class="link-btn" href="${p.tm}" target="_blank">🔗 TM</a>`:''}
+        ${p.video?`<a class="link-btn vid" href="${p.video}" target="_blank">▶</a>`:''}
+      </div></td>
+    </tr>`;
+  });
+  tbody.innerHTML=html;
+}
+// ==============================
+// DASHBOARD KPI
+// ==============================
+function renderDashboard() {
+  const ps = allPlayers();
+  const now = new Date();
+
+  // ── JOUEURS KPI ──
+  const total = ps.length;
+  const u18 = ps.filter(p => (2026 - p.year) <= 18).length;
+  const u21 = ps.filter(p => (2026 - p.year) <= 21).length;
+  const pros = ps.filter(p => (2026 - p.year) > 21).length;
+  const nations = new Set(ps.map(p => p.nationality)).size;
+  const notRep = ps.filter(p => (p.comment||'').toLowerCase().includes('not represented')).length;
+
+  document.getElementById('dash-kpi-players').innerHTML = [
+    { label:'Total Joueurs',     value: total,   sub: 'en portefeuille',          icon:'👤', cls:'kpi-green'  },
+    { label:'U18',               value: u18,     sub: `${Math.round(u18/total*100)||0}% du roster`,  icon:'🌱', cls:'kpi-blue'   },
+    { label:'U21',               value: u21,     sub: 'incluant U18',             icon:'⚡', cls:'kpi-cyan'   },
+    { label:'Professionnels',    value: pros,    sub: '+21 ans',                  icon:'⭐', cls:'kpi-gold'   },
+    { label:'Nationalités',      value: nations, sub: 'pays représentés',         icon:'🌍', cls:'kpi-purple' },
+    { label:'Sans représentation',value:notRep,  sub: 'à contacter',              icon:'⚠️', cls:'kpi-red'    },
+  ].map(k => `
+    <div class="kpi-card ${k.cls}">
+      <span class="kpi-icon">${k.icon}</span>
+      <div class="kpi-label">${k.label}</div>
+      <div class="kpi-value">${k.value}</div>
+      <div class="kpi-sub">${k.sub}</div>
+    </div>`).join('');
+
+  // ── PIPELINE MINI ──
+  const pipeColors = ['var(--muted)','#60a5fa','#c084fc','#fb923c','var(--gold)','var(--grass)'];
+  const pipeCounts = PIPE_STEPS.map(s => ps.filter(p => getPipeStep(p.id) === s.key).length);
+  document.getElementById('dash-pipeline').innerHTML = PIPE_STEPS.map((s, i) => `
+    <div class="pipe-mini-step" onclick="switchTabByName('pipeline')" title="Voir le pipeline">
+      <div class="pipe-mini-icon">${s.icon}</div>
+      <div class="pipe-mini-count" style="color:${pipeColors[i]}">${pipeCounts[i]}</div>
+      <div class="pipe-mini-label">${s.label}</div>
+    </div>`).join('');
+
+  // ── CLUBS KPI ──
+  const totalClubs = clubs.length;
+  const clubCountries = new Set(clubs.map(c => c.country).filter(Boolean)).size;
+  const profilesTotal = clubs.reduce((a, c) => a + (c.profiles?.length || 0), 0);
+  document.getElementById('dash-kpi-clubs').innerHTML = [
+    { label:'Clubs',           value: totalClubs,    sub: 'en base',            icon:'🏟️', cls:'kpi-gold'   },
+    { label:'Pays',            value: clubCountries, sub: 'représentés',        icon:'🗺️', cls:'kpi-green'  },
+    { label:'Profils Ouverts', value: profilesTotal, sub: 'postes recherchés',  icon:'📋', cls:'kpi-cyan'   },
+  ].map(k => `
+    <div class="kpi-card ${k.cls}">
+      <span class="kpi-icon">${k.icon}</span>
+      <div class="kpi-label">${k.label}</div>
+      <div class="kpi-value">${k.value}</div>
+      <div class="kpi-sub">${k.sub}</div>
+    </div>`).join('');
+
+  // ── ALERTES ──
+  const alerts = [];
+  // Contrats qui expirent (détectés via commentaire)
+  ps.forEach(p => {
+    const c = (p.comment||'').toLowerCase();
+    const isEndingSoon = c.includes('end of contract june 2026') || c.includes('fin contrat juin 2026') || c.includes('fin de contrat juin 2026');
+    const isEndingMid  = c.includes('end of contract june 2027') || c.includes('2027');
+    const isFree       = c.includes('not represented') || c.includes('non représenté') || c.includes('agent libre');
+    if (isEndingSoon) alerts.push({ p, type:'urgent', tag:'⏰ Expire juin 2026', detail:`${p.club} · ${p.position}` });
+    else if (isEndingMid) alerts.push({ p, type:'warn', tag:'📅 Expire 2027', detail:`${p.club} · ${p.position}` });
+    else if (isFree) alerts.push({ p, type:'info', tag:'🔓 Sans représentation', detail:`${p.club} · ${p.position}` });
+  });
+  // Sort: urgent first
+  alerts.sort((a,b) => ({urgent:0,warn:1,info:2}[a.type] - ({urgent:0,warn:1,info:2}[b.type])));
+
+  const alertsEl = document.getElementById('dash-alerts');
+  if (!alerts.length) {
+    alertsEl.innerHTML = '<div style="color:var(--muted);font-size:13px;padding:10px">Aucune alerte détectée</div>';
+  } else {
+    alertsEl.innerHTML = alerts.slice(0, 10).map(a => {
+      const flagE = flagEmoji(FLAG_CODES[a.p.nationality]||'');
+      return `<div class="dash-alert dash-alert-${a.type}">
+        <div class="dash-alert-icon">${flagE||'👤'}</div>
+        <div class="dash-alert-body">
+          <div class="dash-alert-name">${a.p.name}</div>
+          <div class="dash-alert-detail">${a.detail} · Agent : ${a.p.agent}</div>
+        </div>
+        <div class="dash-alert-tag">${a.tag}</div>
+      </div>`;
+    }).join('');
+  }
+
+  // ── TOP NATIONALITÉS ──
+  const natCount = {};
+  ps.forEach(p => { natCount[p.nationality] = (natCount[p.nationality]||0)+1; });
+  const natSorted = Object.entries(natCount).sort((a,b) => b[1]-a[1]).slice(0,8);
+  const maxNat = natSorted[0]?.[1] || 1;
+  document.getElementById('dash-nations').innerHTML = natSorted.map(([nat, cnt]) => {
+    const f = FLAG_CODES[nat]; const flagE = f ? flagEmoji(f) : '🌐';
+    return `<div class="nat-row">
+      <span class="nat-flag">${flagE}</span>
+      <span class="nat-name">${nat}</span>
+      <div class="nat-bar-wrap"><div class="nat-bar" style="width:${Math.round(cnt/maxNat*100)}%"></div></div>
+      <span class="nat-count">${cnt}</span>
+    </div>`;
+  }).join('');
+
+  // ── INTERMÉDIAIRES ──
+  const agentCount = {};
+  ps.forEach(p => {
+    p.agent.split('/').map(a => a.trim()).forEach(a => {
+      if (a && a !== '—') agentCount[a] = (agentCount[a]||0)+1;
+    });
+  });
+  const agentSorted = Object.entries(agentCount).sort((a,b) => b[1]-a[1]).slice(0, 7);
+  document.getElementById('dash-agents').innerHTML = agentSorted.map(([name, cnt]) =>
+    `<div class="agent-row">
+      <span style="font-size:12px">🤝 ${name}</span>
+      <span class="agent-count-badge">${cnt}</span>
+    </div>`
+  ).join('');
+}
+
+function switchTabByName(name) {
+  const btn = document.querySelector(`.tab-btn[onclick*="'${name}'"]`);
+  if (btn) { switchTab(name, btn); }
+}
+
+// ==============================
+// PIPELINE
+// ==============================
+const PIPE_STEPS = [
+  { key:'prospect',   label:'Prospect',        icon:'👁',  color:'var(--muted)',   desc:'Joueur identifié, pas encore contacté' },
+  { key:'contact',    label:'Contact établi',  icon:'📞',  color:'#60a5fa',        desc:'Premier contact pris avec le joueur ou son entourage' },
+  { key:'video',      label:'Vidéo envoyée',   icon:'🎬',  color:'#c084fc',        desc:'Profil vidéo transmis à un club ou à l\'agent' },
+  { key:'essai',      label:'Essai demandé',   icon:'🏃',  color:'#fb923c',        desc:'Un club a demandé ou confirmé un essai' },
+  { key:'nego',       label:'Négociation',     icon:'💬',  color:'var(--gold)',    desc:'Discussions contractuelles en cours' },
+  { key:'signe',      label:'Contrat signé',   icon:'✅',  color:'var(--grass)',   desc:'Accord trouvé, contrat signé' },
+];
+
+// playerPipeline: {id: stepKey}
+let playerPipeline = JSON.parse(localStorage.getItem('playerPipeline') || '{}');
+function savePipeline() { localStorage.setItem('playerPipeline', JSON.stringify(playerPipeline)); }
+function getPipeStep(id) { return playerPipeline[id] || 'prospect'; }
+function getPipeIndex(id) { return PIPE_STEPS.findIndex(s => s.key === getPipeStep(id)); }
+function getStepByKey(key) { return PIPE_STEPS.find(s => s.key === key) || PIPE_STEPS[0]; }
+
+function renderPipeline() {
+  // Stats bar
+  const ps = allPlayers();
+  const counts = {};
+  PIPE_STEPS.forEach(s => counts[s.key] = 0);
+  ps.forEach(p => { const k = getPipeStep(p.id); counts[k] = (counts[k]||0)+1; });
+  document.getElementById('pipeline-stats').innerHTML = PIPE_STEPS.map(s =>
+    `<div style="text-align:center">
+      <div style="font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:22px;color:${s.color};line-height:1">${counts[s.key]||0}</div>
+      <div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-top:2px">${s.label}</div>
+    </div>`
+  ).join('');
+
+  // Legend
+  document.getElementById('pipe-legend').innerHTML = PIPE_STEPS.map(s =>
+    `<div class="pipe-legend-item"><div class="pipe-legend-dot" style="background:${s.color}"></div>${s.icon} ${s.label}</div>`
+  ).join('');
+
+  // Board
+  const board = document.getElementById('pipeline-board');
+  board.innerHTML = PIPE_STEPS.map((step, si) => {
+    const stepPlayers = ps.filter(p => getPipeStep(p.id) === step.key);
+    return `<div class="pipe-col" id="pipe-col-${step.key}"
+      ondragover="pipeDragOver(event,'${step.key}')"
+      ondragleave="pipeDragLeave(event,'${step.key}')"
+      ondrop="pipeDrop(event,'${step.key}')">
+      <div class="pipe-col-header">
+        <span class="pipe-col-title" style="color:${step.color}">${step.icon} ${step.label}</span>
+        <span class="pipe-col-count">${stepPlayers.length}</span>
+      </div>
+      ${stepPlayers.length === 0
+        ? `<div class="pipe-empty">Glissez un joueur ici</div>`
+        : stepPlayers.map(p => {
+            const flagE = flagEmoji(FLAG_CODES[p.nationality]||'');
+            const prevStep = PIPE_STEPS[si-1];
+            const nextStep = PIPE_STEPS[si+1];
+            return `<div class="pipe-card" data-pid="${p.id}" draggable="true"
+              ondragstart="pipeDragStart(event,'${p.id}')"
+              ondragend="pipeDragEnd(event)">
+              <div class="pipe-card-name">${flagE} ${p.name}</div>
+              <div class="pipe-card-info">${p.position} · ${p.club} · ${2026-p.year}y</div>
+              <div class="pipe-card-tags">
+                ${p.tm ? `<a href="${p.tm}" target="_blank" class="pipe-tag" style="background:rgba(12,83,184,0.15);color:#6ba3ff;border:1px solid rgba(12,83,184,0.4);text-decoration:none">🔗 TM</a>` : ''}
+                ${p.video ? `<a href="${p.video}" target="_blank" class="pipe-tag" style="background:rgba(255,71,87,0.1);color:#ff6b7a;border:1px solid rgba(255,71,87,0.3);text-decoration:none">▶ Vidéo</a>` : ''}
+              </div>
+              <div class="pipe-card-move">
+                ${prevStep ? `<button class="pipe-move-btn back" onclick="movePlayer('${p.id}','${prevStep.key}')">← ${prevStep.icon}</button>` : '<span></span>'}
+                <button class="pipe-move-btn" onclick="openPipeStepModal('${p.id}')" style="color:var(--muted)">⋯</button>
+                ${nextStep ? `<button class="pipe-move-btn fwd" onclick="movePlayer('${p.id}','${nextStep.key}')">${nextStep.icon} →</button>` : '<span></span>'}
+              </div>
+            </div>`;
+          }).join('')
+      }
+    </div>`;
+  }).join('');
+}
+
+let pipeDragId = null;
+function pipeDragStart(e, id) {
+  pipeDragId = id;
+  setTimeout(() => { const el = document.querySelector(`[data-pid="${id}"]`); if(el) el.classList.add('dragging'); }, 0);
+}
+function pipeDragEnd(e) {
+  document.querySelectorAll('.pipe-card.dragging').forEach(el => el.classList.remove('dragging'));
+  pipeDragId = null;
+}
+function pipeDragOver(e, stepKey) {
+  e.preventDefault();
+  document.getElementById('pipe-col-'+stepKey)?.classList.add('drop-active');
+}
+function pipeDragLeave(e, stepKey) {
+  document.getElementById('pipe-col-'+stepKey)?.classList.remove('drop-active');
+}
+function pipeDrop(e, stepKey) {
+  e.preventDefault();
+  document.getElementById('pipe-col-'+stepKey)?.classList.remove('drop-active');
+  if (!pipeDragId) return;
+  movePlayer(pipeDragId, stepKey);
+}
+function movePlayer(id, stepKey) {
+  playerPipeline[id] = stepKey;
+  savePipeline();
+  renderPipeline();
+  renderPlayers(); // update badge on player cards too
+  const step = getStepByKey(stepKey);
+  const p = allPlayers().find(x => x.id === id);
+  showToast(`${p?.name} → ${step.icon} ${step.label}`);
+}
+
+// Step change modal
+let pipeModalId = null;
+function openPipeStepModal(id) {
+  pipeModalId = id;
+  const p = allPlayers().find(x => x.id === id);
+  document.getElementById('pipe-modal-player').textContent = `${p?.name} — ${p?.position}`;
+  const current = getPipeStep(id);
+  document.getElementById('step-picker').innerHTML = PIPE_STEPS.map(s => `
+    <div class="step-option ${s.key === current ? 'current' : ''}" onclick="selectPipeStep('${s.key}')">
+      <span class="step-option-icon">${s.icon}</span>
+      <div class="step-option-text">
+        <div class="step-option-label" style="color:${s.color}">${s.label}</div>
+        <div class="step-option-desc">${s.desc}</div>
+      </div>
+      ${s.key === current ? '<span style="color:var(--grass);font-size:14px">✓</span>' : ''}
+    </div>`).join('');
+  document.getElementById('pipeline-step-modal').classList.add('open');
+}
+function selectPipeStep(stepKey) {
+  if (!pipeModalId) return;
+  movePlayer(pipeModalId, stepKey);
+  closeModal('pipeline-step-modal');
+}
+
+// Step badge for player cards
+function stepBadgeHTML(id) {
+  const idx = getPipeIndex(id);
+  const step = PIPE_STEPS[idx];
+  return `<span class="step-badge step-${idx}" onclick="openPipeStepModal('${id}')" title="Cliquer pour changer">${step.icon} ${step.label}</span>`;
+}
+
+// ==============================
+// SCOUTING
+// ==============================
+const SCOUT_CRITERIA = [
+  { key:'tech',   label:'Technique',        color:'#818cf8' },
+  { key:'phys',   label:'Physique',         color:'#34d399' },
+  { key:'speed',  label:'Vitesse',          color:'#60a5fa' },
+  { key:'mental', label:'Mental',           color:'#f472b6' },
+  { key:'pot',    label:'Potentiel',        color:'var(--gold)' },
+  { key:'value',  label:'Valeur Marchande', color:'#a78bfa' },
+];
+
+let scoutReports = JSON.parse(localStorage.getItem('scoutReports') || '{}');
+function saveScouts() { localStorage.setItem('scoutReports', JSON.stringify(scoutReports)); }
+function getScout(id) { return scoutReports[id] || null; }
+
+function calcScore(report) {
+  if (!report) return null;
+  const sum = SCOUT_CRITERIA.reduce((a, c) => a + (report[c.key] || 0), 0);
+  return Math.round((sum / (SCOUT_CRITERIA.length * 10)) * 100);
+}
+
+function getScoreClass(score) {
+  if (score === null) return { label:'Non évalué', cls:'', desc:'', color:'var(--muted)' };
+  if (score >= 85) return { label:'Elite Prospect', cls:'scout-score-elite', desc:'Joueur à très fort potentiel', color:'var(--gold)' };
+  if (score >= 75) return { label:'Très Bon',       cls:'scout-score-good',  desc:'Profil solide, recommandé',   color:'var(--grass)' };
+  if (score >= 65) return { label:'À Suivre',       cls:'scout-score-watch', desc:'Intéressant, à revoir',      color:'#fb923c' };
+  return               { label:'Observation',       cls:'scout-score-obs',   desc:'Niveau insuffisant pour l\'instant', color:'var(--muted)' };
+}
+
+function scoutBarHTML(id) {
+  const r = getScout(id);
+  if (!r) return '';
+  const sc = calcScore(r);
+  const info = getScoreClass(sc);
+  const fillColor = info.color;
+  return `<div class="scout-bar-wrap">
+    <div class="scout-bar-header">
+      <span class="scout-bar-label">Scout Score</span>
+      <span class="scout-score-val ${info.cls}">${sc}/100</span>
+    </div>
+    <div class="scout-track"><div class="scout-fill" style="width:${sc}%;background:${fillColor}"></div></div>
+    <div class="scout-class-label ${info.cls}">${info.label}</div>
+    <div class="scout-criteria">
+      ${SCOUT_CRITERIA.map(c => `<div class="scout-crit">
+        <div class="scout-crit-label">${c.label.slice(0,5)}</div>
+        <div class="scout-crit-val" style="color:${c.color}">${r[c.key]??'—'}</div>
+      </div>`).join('')}
+    </div>
+  </div>`;
+}
+
+let scoutModalId = null;
+
+function openScoutModal(id) {
+  scoutModalId = id;
+  const p = allPlayers().find(x => x.id === id);
+  document.getElementById('scout-modal-name').textContent = `${p.name} · ${p.position} · ${p.club}`;
+  const existing = getScout(id) || {};
+  // Build sliders
+  document.getElementById('scout-sliders').innerHTML = SCOUT_CRITERIA.map(c => {
+    const val = existing[c.key] ?? 5;
+    return `<div class="scout-slider-row">
+      <span class="scout-slider-name">${c.label}</span>
+      <input type="range" min="0" max="10" step="1" value="${val}"
+        class="scout-slider-input" id="sc-${c.key}"
+        oninput="updateScoutPreview()"
+        style="accent-color:${c.color}">
+      <span class="scout-slider-val" id="scv-${c.key}">${val}</span>
+    </div>`;
+  }).join('');
+  document.getElementById('scout-notes').value = existing.notes || '';
+  updateScoutPreview();
+  document.getElementById('scout-modal').classList.add('open');
+}
+
+function updateScoutPreview() {
+  const vals = {};
+  SCOUT_CRITERIA.forEach(c => {
+    const el = document.getElementById('sc-'+c.key);
+    const v = el ? parseInt(el.value) : 5;
+    vals[c.key] = v;
+    const vEl = document.getElementById('scv-'+c.key);
+    if (vEl) vEl.textContent = v;
+  });
+  const sc = Math.round((Object.values(vals).reduce((a,b)=>a+b,0) / (SCOUT_CRITERIA.length*10))*100);
+  const info = getScoreClass(sc);
+  const numEl = document.getElementById('scout-preview-num');
+  numEl.textContent = sc;
+  numEl.className = 'scout-total-num ' + info.cls;
+  const clsEl = document.getElementById('scout-preview-class');
+  clsEl.textContent = info.label;
+  clsEl.className = 'scout-total-class ' + info.cls;
+  document.getElementById('scout-preview-desc').textContent = info.desc;
+}
+
+function saveScoutReport() {
+  if (!scoutModalId) return;
+  const report = { notes: document.getElementById('scout-notes').value.trim() };
+  SCOUT_CRITERIA.forEach(c => {
+    report[c.key] = parseInt(document.getElementById('sc-'+c.key).value);
+  });
+  scoutReports[scoutModalId] = report;
+  saveScouts();
+  closeModal('scout-modal');
+  renderPlayers();
+  if (document.getElementById('tab-scouting').classList.contains('active')) renderScouting();
+  renderDashboard();
+  const p = allPlayers().find(x => x.id === scoutModalId);
+  showToast(`Rapport scout enregistré — ${p?.name} : ${calcScore(report)}/100`);
+  scoutModalId = null;
+}
+
+let scoutFilter = 'all';
+function setScoutFilter(f, btn) {
+  scoutFilter = f;
+  document.querySelectorAll('.scout-class-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderScouting();
+}
+
+function renderScouting() {
+  const ps = allPlayers();
+  // Summary counts
+  let elite=0, good=0, watch=0, obs=0, none=0;
+  ps.forEach(p => {
+    const sc = calcScore(getScout(p.id));
+    if (sc===null) none++;
+    else if (sc>=85) elite++;
+    else if (sc>=75) good++;
+    else if (sc>=65) watch++;
+    else obs++;
+  });
+  document.getElementById('scout-summary').innerHTML = [
+    { label:'Elite', val:elite, color:'var(--gold)' },
+    { label:'Très Bon', val:good, color:'var(--grass)' },
+    { label:'À Suivre', val:watch, color:'#fb923c' },
+    { label:'Observation', val:obs, color:'var(--muted)' },
+    { label:'Non évalués', val:none, color:'var(--muted)' },
+  ].map(s => `<div style="text-align:center">
+    <div style="font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:22px;color:${s.color};line-height:1">${s.val}</div>
+    <div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-top:2px">${s.label}</div>
+  </div>`).join('');
+
+  // Filter
+  let list = ps.filter(p => {
+    const sc = calcScore(getScout(p.id));
+    if (scoutFilter === 'all')   return true;
+    if (scoutFilter === 'none')  return sc === null;
+    if (scoutFilter === 'elite') return sc !== null && sc >= 85;
+    if (scoutFilter === 'good')  return sc !== null && sc >= 75 && sc < 85;
+    if (scoutFilter === 'watch') return sc !== null && sc >= 65 && sc < 75;
+    if (scoutFilter === 'obs')   return sc !== null && sc < 65;
+    return true;
+  });
+
+  // Sort by score desc (non-evaluated last)
+  list.sort((a, b) => {
+    const sa = calcScore(getScout(a.id)) ?? -1;
+    const sb = calcScore(getScout(b.id)) ?? -1;
+    return sb - sa;
+  });
+
+  const grid = document.getElementById('scout-grid');
+  if (!list.length) {
+    grid.innerHTML = '<div class="empty"><div class="empty-icon">🎯</div>Aucun joueur dans cette catégorie</div>';
+    return;
+  }
+
+  grid.innerHTML = list.map((p, rank) => {
+    const r = getScout(p.id);
+    const sc = calcScore(r);
+    const info = getScoreClass(sc);
+    const flagE = flagEmoji(FLAG_CODES[p.nationality]||'');
+    return `<div class="scout-player-card">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:10px">
+        <div>
+          <div style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:17px">${flagE} ${p.name}</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:2px">${p.position} · ${p.club} · ${2026-p.year}y</div>
+        </div>
+        ${sc!==null ? `<div style="text-align:right">
+          <div style="font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:28px;line-height:1;color:${info.color}">${sc}</div>
+          <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:${info.color}">${info.label}</div>
+        </div>` : `<div style="color:var(--muted);font-size:11px;padding-top:4px">Non évalué</div>`}
+      </div>
+      ${r ? `
+        <div class="scout-track" style="margin-bottom:8px"><div class="scout-fill" style="width:${sc}%;background:${info.color}"></div></div>
+        <div class="scout-radar">
+          ${SCOUT_CRITERIA.map(c => `<div class="scout-radar-item">
+            <span class="scout-radar-lbl">${c.label.slice(0,7)}</span>
+            <div class="scout-radar-track"><div class="scout-radar-fill" style="width:${(r[c.key]||0)*10}%;background:${c.color}"></div></div>
+            <span class="scout-radar-num" style="color:${c.color}">${r[c.key]??0}</span>
+          </div>`).join('')}
+        </div>
+        ${r.notes ? `<div style="font-size:11px;color:var(--muted);background:rgba(255,255,255,0.02);border-left:2px solid var(--purple);padding:6px 8px;border-radius:0 5px 5px 0;margin-top:8px;line-height:1.5">${r.notes}</div>` : ''}
+      ` : `<div style="text-align:center;padding:16px 0;color:var(--muted);font-size:12px">Pas encore évalué</div>`}
+      <div style="display:flex;gap:6px;margin-top:10px">
+        <button class="btn-scout" style="flex:1;justify-content:center" onclick="openScoutModal('${p.id}')">
+          ${r ? '✏️ Modifier' : '🎯 Évaluer'}
+        </button>
+        ${p.tm ? `<a class="btn-tm" href="${p.tm}" target="_blank" style="display:flex;align-items:center;gap:4px">🔗 TM</a>` : ''}
+        ${p.video ? `<a class="btn-video" href="${p.video}" target="_blank" style="display:flex;align-items:center;gap:4px">▶</a>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ==============================
+// OPPORTUNITÉS
+// ==============================
+const OPP_SECTIONS = [
+  { key:'fin-contrat',   icon:'⏰', title:'Fin de Contrat Imminente',   color:'opp-urgent', tag:'opp-tag-urgent', tagLabel:'Fin contrat' },
+  { key:'libres',        icon:'🔓', title:'Agents Libres',              color:'opp-info',   tag:'opp-tag-info',   tagLabel:'Agent libre' },
+  { key:'sans-rep',      icon:'⚠️', title:'Sans Représentation',        color:'opp-warn',   tag:'opp-tag-warn',   tagLabel:'Sans agent' },
+  { key:'nego',          icon:'💬', title:'En Négociation',             color:'opp-gold',   tag:'opp-tag-gold',   tagLabel:'Négociation' },
+  { key:'potentiel',     icon:'⭐', title:'Fort Potentiel (Score ≥ 75)',color:'opp-purple', tag:'opp-tag-purple', tagLabel:'Elite/Très Bon' },
+  { key:'pret',          icon:'✈️', title:'Joueurs Prêtables',          color:'opp-blue',   tag:'opp-tag-blue',   tagLabel:'Prêtable' },
+];
+
+let oppFilter = 'all';
+
+function getOppPlayers() {
+  const ps = allPlayers();
+  const result = {};
+
+  OPP_SECTIONS.forEach(s => result[s.key] = []);
+
+  ps.forEach(p => {
+    const comment = (p.comment || '').toLowerCase();
+    const pipeline = getPipeStep(p.id);
+    const sc = calcScore(getScout(p.id));
+
+    // Fin de contrat imminente (détection dans commentaires)
+    const endSoon = comment.includes('end of contract june 2026') ||
+                    comment.includes('fin contrat juin 2026') ||
+                    comment.includes('fin de contrat juin 2026') ||
+                    comment.includes('end of contract july 2026') ||
+                    comment.includes('fin de représentation') ||
+                    comment.includes('end of representationa agreement june 26') ||
+                    comment.includes('agreement june 26');
+    if (endSoon) result['fin-contrat'].push(p);
+
+    // Agents libres (contrat expiré ou mentionné explicitement)
+    const isFree = comment.includes('agent libre') ||
+                   comment.includes('free agent') ||
+                   comment.includes('released') ||
+                   (comment.includes('end of contract') && comment.includes('2025'));
+    if (isFree) result['libres'].push(p);
+
+    // Sans représentation
+    const noRep = comment.includes('not represented') ||
+                  comment.includes('non représenté') ||
+                  comment.includes('not an agent');
+    if (noRep) result['sans-rep'].push(p);
+
+    // En négociation
+    if (pipeline === 'nego') result['nego'].push(p);
+
+    // Fort potentiel (Scout Score ≥ 75)
+    if (sc !== null && sc >= 75) result['potentiel'].push(p);
+
+    // Prêtable (mentionné dans commentaires)
+    const onLoan = comment.includes('prêt') || comment.includes('loan') ||
+                   comment.includes('pretable') || comment.includes('prêtable');
+    if (onLoan) result['pret'].push(p);
+  });
+
+  return result;
+}
+
+function renderOpps() {
+  const data = getOppPlayers();
+
+  // Filter bar with counts
+  const allCount = Object.values(data).reduce((a, arr) => a + arr.length, 0);
+  document.getElementById('opp-filter-bar').innerHTML =
+    `<button class="opp-filter-btn ${oppFilter==='all'?'active':''}" onclick="setOppFilter('all',this)">🗂 Tout voir <span class="opp-filter-count">${allCount}</span></button>` +
+    OPP_SECTIONS.map(s =>
+      `<button class="opp-filter-btn ${oppFilter===s.key?'active':''}" onclick="setOppFilter('${s.key}',this)">
+        ${s.icon} ${s.title.split(' ').slice(0,3).join(' ')}
+        <span class="opp-filter-count">${data[s.key].length}</span>
+      </button>`
+    ).join('');
+
+  // Content
+  const sections = oppFilter === 'all'
+    ? OPP_SECTIONS
+    : OPP_SECTIONS.filter(s => s.key === oppFilter);
+
+  document.getElementById('opp-content').innerHTML = sections.map(s => {
+    const players = data[s.key];
+    return `<div class="opp-section">
+      <div class="opp-section-header">
+        <span class="opp-section-icon">${s.icon}</span>
+        <span class="opp-section-title">${s.title}</span>
+        <span class="opp-section-count">${players.length} joueur${players.length!==1?'s':''}</span>
+      </div>
+      <div class="opp-grid">
+        ${players.length === 0
+          ? `<div class="opp-empty">Aucun joueur dans cette catégorie</div>`
+          : players.map(p => oppCardHTML(p, s)).join('')
+        }
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function oppCardHTML(p, section) {
+  const flagE = flagEmoji(FLAG_CODES[p.nationality]||'');
+  const sc = calcScore(getScout(p.id));
+  const pipeStep = getStepByKey(getPipeStep(p.id));
+  const logoURL = CLUB_LOGOS[p.club];
+
+  return `<div class="opp-card ${section.color}">
+    <div class="opp-card-top">
+      <div class="opp-name">${flagE} ${p.name}</div>
+      <span class="opp-tag ${section.tag}">${section.tagLabel}</span>
+    </div>
+    <div class="opp-detail">
+      <strong style="color:var(--white)">${p.position}</strong> · ${p.club}
+      ${p.league ? `· <span style="color:var(--muted)">${p.league}</span>` : ''}
+      <br>
+      ${2026 - p.year}y · ${p.nationality}
+      ${p.agent !== '—' ? `· 🤝 ${p.agent}` : ''}
+    </div>
+    <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+      <span class="step-badge step-${PIPE_STEPS.findIndex(s=>s.key===getPipeStep(p.id))}" style="font-size:9px;padding:2px 7px">${pipeStep.icon} ${pipeStep.label}</span>
+      ${sc !== null ? `<span style="font-size:10px;font-weight:700;color:${getScoreClass(sc).color}">🎯 ${sc}/100 · ${getScoreClass(sc).label}</span>` : ''}
+    </div>
+    ${p.comment ? `<div style="font-size:10px;color:var(--muted);margin-top:8px;line-height:1.5;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">${p.comment}</div>` : ''}
+    <div class="opp-actions">
+      ${p.tm ? `<a class="btn-tm" href="${p.tm}" target="_blank" style="font-size:10px;padding:5px 8px">🔗 TM</a>` : ''}
+      ${p.video ? `<a class="btn-video" href="${p.video}" target="_blank" style="font-size:10px;padding:5px 8px">▶ Vidéo</a>` : ''}
+      <button class="btn-scout" style="font-size:10px;padding:5px 8px" onclick="openScoutModal('${p.id}')">🎯 Scout</button>
+      <button class="btn-request" style="font-size:10px;padding:5px 8px" onclick="openRequest(event,'${p.id}')">✉ Club</button>
+    </div>
+  </div>`;
+}
+
+function setOppFilter(key, btn) {
+  oppFilter = key;
+  document.querySelectorAll('.opp-filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderOpps();
+}
+
+// ==============================
+// CARTE MONDIALE
+// ==============================
+let mapView = 'bubbles';
+let selectedNat = null;
+
+// Gradient palette for bubbles — from grass green to purple
+const BUBBLE_COLORS = [
+  '#00c853','#00ab46','#009439','#007d2d','#006621',
+  '#f0b429','#e6a020','#db8c18','#d07810','#c56408',
+];
+
+function setMapView(view) {
+  mapView = view;
+  document.getElementById('map-view-bubbles').style.display = view==='bubbles' ? '' : 'none';
+  document.getElementById('map-view-table').style.display   = view==='table'   ? '' : 'none';
+  document.getElementById('map-btn-bubbles').classList.toggle('active', view==='bubbles');
+  document.getElementById('map-btn-table').classList.toggle('active',   view==='table');
+}
+
+function renderWorldMap() {
+  const ps = allPlayers();
+
+  // Count by nationality
+  const natCount = {};
+  ps.forEach(p => { natCount[p.nationality] = (natCount[p.nationality]||0)+1; });
+  const sorted = Object.entries(natCount).sort((a,b) => b[1]-a[1]);
+  const total = ps.length;
+  const maxCount = sorted[0]?.[1] || 1;
+  const nations = sorted.length;
+  const topNat = sorted[0]?.[0] || '—';
+
+  // ── STATS BOX ──
+  document.getElementById('world-stats').innerHTML = [
+    { label:'Total joueurs',    val: total },
+    { label:'Nationalités',     val: nations },
+    { label:'Nat. dominante',   val: `${flagEmoji(FLAG_CODES[topNat]||'')} ${topNat}` },
+    { label:'Afrique',          val: ps.filter(p=>['Senegal','Mali','Ivory Coast','Nigeria','Gambia','Morocco','Algeria','RD Congo','Cameroon','Ghana','Guinea','Tunisia','Egypt','Mauritanie','Burkina Faso'].includes(p.nationality)).length },
+    { label:'Europe',           val: ps.filter(p=>['France','Spain','Italy','Germany','England','Greece','Turkey','Portugal','Belgium','Netherlands'].includes(p.nationality)).length },
+    { label:'Moyen-Orient',     val: ps.filter(p=>['Oman','UAE','United Arab Emirates','Saudi Arabia'].includes(p.nationality)).length },
+  ].map(s => `<div class="world-stat-row"><span>${s.label}</span><span class="world-stat-val">${s.val}</span></div>`).join('');
+
+  // ── BUBBLES ──
+  const bubblesEl = document.getElementById('world-bubbles');
+  bubblesEl.innerHTML = sorted.map(([nat, cnt], i) => {
+    const f = FLAG_CODES[nat];
+    const flagE = f ? flagEmoji(f) : '🌐';
+    // Size from 56px (1 player) to 120px (max players)
+    const size = Math.round(56 + (cnt / maxCount) * 64);
+    const fontSize = Math.round(size * 0.38);
+    const countSize = Math.round(size * 0.22);
+    const color = BUBBLE_COLORS[Math.min(i, BUBBLE_COLORS.length-1)];
+    const opacity = Math.max(0.25, 1 - (i / sorted.length) * 0.65);
+    const isSelected = selectedNat === nat;
+    return `<div class="world-bubble" onclick="selectNat('${nat}')" title="${nat}: ${cnt} joueur${cnt>1?'s':''}">
+      <div class="bubble-circle" style="
+        width:${size}px;height:${size}px;
+        background:${color};
+        opacity:${opacity};
+        ${isSelected?'border-color:var(--white);border-width:3px;opacity:1;':''}
+      ">
+        <span class="bubble-flag" style="font-size:${Math.round(fontSize*0.7)}px">${flagE}</span>
+        <span class="bubble-count" style="font-size:${countSize}px">${cnt}</span>
+      </div>
+      <span class="bubble-name">${nat.length>10?nat.split(' ')[0]:nat}</span>
+    </div>`;
+  }).join('');
+
+  // ── TABLE ──
+  const tableEl = document.getElementById('world-table');
+  tableEl.innerHTML = sorted.map(([nat, cnt], i) => {
+    const f = FLAG_CODES[nat];
+    const flagE = f ? flagEmoji(f) : '🌐';
+    const barColor = BUBBLE_COLORS[Math.min(i, BUBBLE_COLORS.length-1)];
+    const pct = Math.round((cnt / maxCount) * 100);
+    const isSelected = selectedNat === nat;
+    return `<div class="world-table-row ${isSelected?'selected':''}" onclick="selectNat('${nat}')">
+      <span class="wt-rank">${i+1}</span>
+      <span class="wt-flag">${flagE}</span>
+      <span class="wt-name">${nat}</span>
+      <div class="wt-bar-wrap"><div class="wt-bar" style="width:${pct}%;background:${barColor}"></div></div>
+      <span class="wt-count">${cnt}</span>
+    </div>`;
+  }).join('');
+
+  // Re-show detail if a nat is selected
+  if (selectedNat) showNatDetail(selectedNat);
+}
+
+function selectNat(nat) {
+  selectedNat = selectedNat === nat ? null : nat;
+  if (selectedNat) {
+    showNatDetail(selectedNat);
+  } else {
+    document.getElementById('world-detail').style.display = 'none';
+  }
+  // Re-render to update selection highlight
+  renderWorldMap();
+}
+
+function showNatDetail(nat) {
+  const ps = allPlayers().filter(p => p.nationality === nat);
+  const f = FLAG_CODES[nat];
+  const flagE = f ? flagEmoji(f) : '🌐';
+  document.getElementById('wd-flag').textContent = flagE;
+  document.getElementById('wd-name').textContent = nat;
+  document.getElementById('wd-count').textContent = `${ps.length} joueur${ps.length!==1?'s':''}`;
+
+  document.getElementById('wd-players').innerHTML = ps.map(p => {
+    const sc = calcScore(getScout(p.id));
+    const pipeStep = getStepByKey(getPipeStep(p.id));
+    return `<div class="world-detail-player" onclick="openScoutModal('${p.id}')">
+      <div style="flex:1;min-width:0">
+        <div class="wdp-name">${p.name}</div>
+        <div class="wdp-info">${p.position} · ${p.club} · ${2026-p.year}y</div>
+        <div style="display:flex;gap:5px;margin-top:4px;flex-wrap:wrap">
+          <span style="font-size:9px;padding:1px 6px;border-radius:8px;${getPipeStepStyle(getPipeStep(p.id))}">${pipeStep.icon} ${pipeStep.label}</span>
+          ${sc!==null?`<span style="font-size:9px;font-weight:700;color:${getScoreClass(sc).color}">🎯 ${sc}</span>`:''}
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:4px;align-items:flex-end">
+        ${p.tm?`<a href="${p.tm}" target="_blank" onclick="event.stopPropagation()" class="btn-tm" style="font-size:9px;padding:3px 6px">🔗</a>`:''}
+        ${p.video?`<a href="${p.video}" target="_blank" onclick="event.stopPropagation()" class="btn-video" style="font-size:9px;padding:3px 6px">▶</a>`:''}
+      </div>
+    </div>`;
+  }).join('');
+
+  document.getElementById('world-detail').style.display = 'block';
+}
+
+function getPipeStepStyle(key) {
+  const styles = {
+    prospect:  'background:rgba(140,160,192,0.15);color:var(--muted);border:1px solid var(--border)',
+    contact:   'background:rgba(59,130,246,0.15);color:#60a5fa;border:1px solid rgba(59,130,246,0.3)',
+    video:     'background:rgba(168,85,247,0.15);color:#c084fc;border:1px solid rgba(168,85,247,0.3)',
+    essai:     'background:rgba(249,115,22,0.15);color:#fb923c;border:1px solid rgba(249,115,22,0.3)',
+    nego:      'background:rgba(240,180,41,0.15);color:var(--gold);border:1px solid rgba(240,180,41,0.3)',
+    signe:     'background:rgba(0,200,83,0.15);color:var(--grass);border:1px solid rgba(0,200,83,0.3)',
+  };
+  return styles[key] || styles.prospect;
+}
+
+function switchTab(name,btn){
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('tab-'+name).classList.add('active'); btn.classList.add('active');
+  if(name==='agelist')   renderAgeList();
+  if(name==='pipeline')  renderPipeline();
+  if(name==='dashboard') renderDashboard();
+  if(name==='scouting')  renderScouting();
+  if(name==='opps')      renderOpps();
+  if(name==='worldmap')  renderWorldMap();
+}
+function closeModal(id){ document.getElementById(id).classList.remove('open'); }
+function showToast(msg){ const t=document.getElementById('toast'); t.textContent='✓ '+msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),3000); }
+function updateStats(){
+  const ps=allPlayers();
+  document.getElementById('stat-total').textContent=ps.length;
+  document.getElementById('stat-clubs-count').textContent=clubs.length;
+  document.getElementById('stat-nations').textContent=new Set(ps.map(p=>p.nationality)).size;
+}
+
+// Close modals on backdrop click
+['player-modal','club-modal','request-modal','pipeline-step-modal','scout-modal'].forEach(id=>{
+  document.getElementById(id).addEventListener('click',e=>{ if(e.target===e.currentTarget) closeModal(id); });
+});
+['profile-mini','cat-mini'].forEach(id=>{
+  document.getElementById(id).addEventListener('click',e=>{ if(e.target===e.currentTarget) closeModal(id); });
+});
+document.getElementById('player-picker').addEventListener('click',e=>{ if(e.target===e.currentTarget) closePicker(); });
+
+document.getElementById('todo-input').addEventListener('keydown',e=>{ if(e.key==='Enter') addTodo(); });
+document.getElementById('profile-input').addEventListener('keydown',e=>{ if(e.key==='Enter') saveProfile(); });
+document.getElementById('cat-input').addEventListener('keydown',e=>{ if(e.key==='Enter') confirmAddCategory(); });
+
+// INIT
+renderCatList('player'); renderCatList('club');
+renderPlayers(); renderClubs(); renderTodos();
+renderPitch(); updateStats(); renderDashboard();
+</script>
+</body>
+</html>
