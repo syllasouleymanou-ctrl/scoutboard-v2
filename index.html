@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ScoutBoard — Agent Dashboard</title>
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;900&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 :root {
@@ -1792,9 +1793,17 @@ function saveProfileComment(){
 // Pipeline comments
 let pipeComments = JSON.parse(localStorage.getItem('pipeComments')||'{}');
 function savePipeComments(){ localStorage.setItem('pipeComments', JSON.stringify(pipeComments)); }
-function getPipeComment(id){ return pipeComments[id]||''; }
-function savePipeCommentForPlayer(id, text){
-  pipeComments[id]=text; savePipeComments(); renderPipeline();
+function getPipeComment(id){ return pipeComments[id]||{club:'',note:''}; }
+function savePipeCommentInline(id) {
+  const clubEl = document.getElementById('pci-club-'+id);
+  const noteEl = document.getElementById('pci-note-'+id);
+  if (!clubEl) return;
+  pipeComments[id] = { club: clubEl.value.trim(), note: noteEl ? noteEl.value.trim() : '' };
+  savePipeComments(); renderPipeline();
+}
+function editPipeComment(id) {
+  pipeComments[id] = { club:'', note:'' };
+  savePipeComments(); renderPipeline();
 }
 
 // ==============================
@@ -2140,10 +2149,13 @@ function renderPipeline() {
             const prevStep = PIPE_STEPS[si-1];
             const nextStep = PIPE_STEPS[si+1];
             const pipeComment = getPipeComment(p.id);
-            const commentLabel = step.key==='video'?'🎬 Club contacté / Vidéo envoyée à':
-                                  step.key==='essai'?'🏃 Club essai':
-                                  step.key==='nego'?'💬 Négociation avec':
-                                  step.key==='signe'?'✅ Contrat signé avec':'📝 Note';
+            const hasComment = pipeComment.club || pipeComment.note;
+            // Label adapts per step
+            const clubLabel = step.key==='video'  ? '🎬 Vidéo envoyée à'   :
+                              step.key==='essai'  ? '🏃 Essai dans le club' :
+                              step.key==='nego'   ? '💬 Négociation avec'   :
+                              step.key==='signe'  ? '✅ Contrat signé avec'  :
+                              step.key==='contact'? '📞 Contact établi avec' : null;
             return `<div class="pipe-card" data-pid="${p.id}" draggable="true"
               ondragstart="pipeDragStart(event,'${p.id}')"
               ondragend="pipeDragEnd(event)">
@@ -2153,15 +2165,25 @@ function renderPipeline() {
                 ${p.tm ? `<a href="${p.tm}" target="_blank" class="pipe-tag" style="background:rgba(12,83,184,0.15);color:#6ba3ff;border:1px solid rgba(12,83,184,0.4);text-decoration:none">🔗 TM</a>` : ''}
                 ${p.video ? `<a href="${p.video}" target="_blank" class="pipe-tag" style="background:rgba(255,71,87,0.1);color:#ff6b7a;border:1px solid rgba(255,71,87,0.3);text-decoration:none">▶ Vidéo</a>` : ''}
               </div>
-              <div class="pipe-comment-wrap">
-                <div class="pipe-comment-label">${commentLabel}</div>
-                ${pipeComment
-                  ? `<div class="pipe-comment-text">${pipeComment}</div>
-                     <button class="pipe-comment-btn" onclick="editPipeComment('${p.id}')">✏️ Modifier</button>`
-                  : `<textarea class="pipe-comment-input" id="pci-${p.id}" placeholder="ex. SC Bastia, Ligue 2…" rows="2"></textarea>
-                     <button class="pipe-comment-btn" onclick="savePipeCommentInline('${p.id}')">💾 Enregistrer</button>`
-                }
-              </div>
+              ${clubLabel ? `<div class="pipe-comment-wrap">
+                ${hasComment ? `
+                  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px">
+                    <div class="pipe-comment-label">${clubLabel}</div>
+                    <button onclick="editPipeComment('${p.id}')" style="background:none;border:none;color:var(--muted);font-size:10px;cursor:pointer">✏️</button>
+                  </div>
+                  ${pipeComment.club ? `<div style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:14px;color:var(--white);margin-bottom:3px">🏟️ ${pipeComment.club}</div>` : ''}
+                  ${pipeComment.note ? `<div class="pipe-comment-text">📝 ${pipeComment.note}</div>` : ''}
+                ` : `
+                  <div class="pipe-comment-label">${clubLabel}</div>
+                  <input type="text" id="pci-club-${p.id}" placeholder="Nom du club…"
+                    style="width:100%;background:rgba(255,255,255,0.04);border:1px solid var(--border);color:var(--white);padding:6px 9px;border-radius:5px;font-size:12px;font-family:'Inter',sans-serif;outline:none;margin-bottom:5px"
+                    onkeydown="if(event.key==='Enter')savePipeCommentInline('${p.id}')">
+                  <input type="text" id="pci-note-${p.id}" placeholder="Note (optionnel)…"
+                    style="width:100%;background:rgba(255,255,255,0.04);border:1px solid var(--border);color:var(--white);padding:6px 9px;border-radius:5px;font-size:12px;font-family:'Inter',sans-serif;outline:none;margin-bottom:5px"
+                    onkeydown="if(event.key==='Enter')savePipeCommentInline('${p.id}')">
+                  <button class="pipe-comment-btn" onclick="savePipeCommentInline('${p.id}')">💾 Enregistrer</button>
+                `}
+              </div>` : ''}
               <div class="pipe-card-move">
                 ${prevStep ? `<button class="pipe-move-btn back" onclick="movePlayer('${p.id}','${prevStep.key}')">← ${prevStep.icon}</button>` : '<span></span>'}
                 <button class="pipe-move-btn" onclick="openPipeStepModal('${p.id}')" style="color:var(--muted)">⋯</button>
@@ -2906,5 +2928,80 @@ renderCatList('player'); renderCatList('club');
 renderPlayers(); renderClubs(); renderTodos();
 renderPitch(); updateStats(); renderDashboard();
 </script>
+<!-- ═══ SUPABASE AUTH ═══ -->
+<script>
+const _supa = window.supabase.createClient(
+  "https://djixnroctyjmhaclefbb.supabase.co",
+  "TA_PUBLISHABLE_KEY"   // ← remplace par ta sb_publishable_... key
+);
+
+const AUTH_CSS = `
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:#0a1628;font-family:'Inter',sans-serif}
+  .auth-wrap{height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
+  .auth-box{width:100%;max-width:400px;background:#0f1f3d;border:1px solid rgba(255,255,255,0.07);border-radius:16px;padding:36px}
+  .auth-logo{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:26px;letter-spacing:2px;text-transform:uppercase;color:#f0f4ff;text-align:center;margin-bottom:6px}
+  .auth-logo span{color:#00c853}
+  .auth-sub{text-align:center;font-size:12px;color:#8ca0c0;margin-bottom:28px;letter-spacing:1px}
+  .auth-lbl{font-size:10px;color:#8ca0c0;text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:5px}
+  .auth-inp{width:100%;background:#0a1628;border:1px solid rgba(255,255,255,0.07);color:#f0f4ff;padding:12px 14px;border-radius:8px;font-size:14px;font-family:'Inter',sans-serif;outline:none;margin-bottom:14px}
+  .auth-inp:focus{border-color:#00843a}
+  .auth-btn{width:100%;background:#00c853;border:none;color:#000;padding:13px;border-radius:8px;font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:16px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;margin-top:4px}
+  .auth-btn:hover{background:#00e65c}
+  .auth-err{background:rgba(229,62,62,0.12);border:1px solid rgba(229,62,62,0.3);color:#fc8181;font-size:12px;padding:10px 14px;border-radius:6px;margin-bottom:14px;display:none}
+  .auth-footer{text-align:center;font-size:11px;color:#8ca0c0;margin-top:24px}
+`;
+
+async function _checkAuth() {
+  const { data: { session } } = await _supa.auth.getSession();
+  if (!session) {
+    // Show login screen
+    document.body.innerHTML = `
+      <style>${AUTH_CSS}</style>
+      <div class="auth-wrap">
+        <div class="auth-box">
+          <div class="auth-logo">Scout<span>Board</span> <span style="font-size:12px;color:#8ca0c0;letter-spacing:3px">Pro</span></div>
+          <div class="auth-sub">Accès réservé · Agence privée</div>
+          <div class="auth-err" id="auth-err"></div>
+          <label class="auth-lbl">Email</label>
+          <input class="auth-inp" id="auth-email" type="email" placeholder="votre@email.com" autocomplete="email">
+          <label class="auth-lbl">Mot de passe</label>
+          <input class="auth-inp" id="auth-pwd" type="password" placeholder="••••••••" autocomplete="current-password">
+          <button class="auth-btn" onclick="_login()">Se connecter →</button>
+          <div class="auth-footer">ScoutBoard Pro · Plateforme privée</div>
+        </div>
+      </div>`;
+    document.getElementById('auth-email').addEventListener('keydown', e => { if(e.key==='Enter') document.getElementById('auth-pwd').focus(); });
+    document.getElementById('auth-pwd').addEventListener('keydown', e => { if(e.key==='Enter') _login(); });
+    return;
+  }
+  // Logged in — show the app
+  document.body.style.display = '';
+}
+
+async function _login() {
+  const email = document.getElementById('auth-email').value.trim();
+  const password = document.getElementById('auth-pwd').value;
+  const errEl = document.getElementById('auth-err');
+  errEl.style.display = 'none';
+  if (!email || !password) { errEl.textContent = 'Remplissez email et mot de passe.'; errEl.style.display = 'block'; return; }
+  const btn = document.querySelector('.auth-btn');
+  btn.textContent = 'Connexion…'; btn.disabled = true;
+  const { error } = await _supa.auth.signInWithPassword({ email, password });
+  if (error) {
+    errEl.textContent = error.message === 'Invalid login credentials'
+      ? 'Email ou mot de passe incorrect.' : error.message;
+    errEl.style.display = 'block';
+    btn.textContent = 'Se connecter →'; btn.disabled = false;
+    return;
+  }
+  location.reload();
+}
+
+// Hide body until auth check completes (avoids flash of content)
+document.body.style.display = 'none';
+_checkAuth();
+</script>
+
 </body>
 </html>
