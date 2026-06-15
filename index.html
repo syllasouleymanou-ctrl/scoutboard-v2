@@ -2930,77 +2930,99 @@ renderPitch(); updateStats(); renderDashboard();
 </script>
 <!-- ═══ SUPABASE AUTH ═══ -->
 <script>
-const _supa = window.supabase.createClient(
-  "https://djixnroctyjmhaclefbb.supabase.co",
-  "TA_PUBLISHABLE_KEY"   // ← remplace par ta sb_publishable_... key
-);
+(async function() {
+  // ── Config ──
+  const SUPA_URL = "https://djixnroctyjmhaclefbb.supabase.co";
+  const SUPA_KEY = "TA_PUBLISHABLE_KEY"; // ← remplace par ta sb_publishable_... key
 
-const AUTH_CSS = `
-  *{box-sizing:border-box;margin:0;padding:0}
-  body{background:#0a1628;font-family:'Inter',sans-serif}
-  .auth-wrap{height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
-  .auth-box{width:100%;max-width:400px;background:#0f1f3d;border:1px solid rgba(255,255,255,0.07);border-radius:16px;padding:36px}
-  .auth-logo{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:26px;letter-spacing:2px;text-transform:uppercase;color:#f0f4ff;text-align:center;margin-bottom:6px}
-  .auth-logo span{color:#00c853}
-  .auth-sub{text-align:center;font-size:12px;color:#8ca0c0;margin-bottom:28px;letter-spacing:1px}
-  .auth-lbl{font-size:10px;color:#8ca0c0;text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:5px}
-  .auth-inp{width:100%;background:#0a1628;border:1px solid rgba(255,255,255,0.07);color:#f0f4ff;padding:12px 14px;border-radius:8px;font-size:14px;font-family:'Inter',sans-serif;outline:none;margin-bottom:14px}
-  .auth-inp:focus{border-color:#00843a}
-  .auth-btn{width:100%;background:#00c853;border:none;color:#000;padding:13px;border-radius:8px;font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:16px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;margin-top:4px}
-  .auth-btn:hover{background:#00e65c}
-  .auth-err{background:rgba(229,62,62,0.12);border:1px solid rgba(229,62,62,0.3);color:#fc8181;font-size:12px;padding:10px 14px;border-radius:6px;margin-bottom:14px;display:none}
-  .auth-footer{text-align:center;font-size:11px;color:#8ca0c0;margin-top:24px}
-`;
+  const AUTH_CSS = `
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{background:#0a1628;font-family:'Inter',sans-serif}
+    .auth-wrap{height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
+    .auth-box{width:100%;max-width:400px;background:#0f1f3d;border:1px solid rgba(255,255,255,0.07);border-radius:16px;padding:36px}
+    .auth-logo{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:26px;letter-spacing:2px;text-transform:uppercase;color:#f0f4ff;text-align:center;margin-bottom:6px}
+    .auth-logo span{color:#00c853}
+    .auth-sub{text-align:center;font-size:12px;color:#8ca0c0;margin-bottom:28px;letter-spacing:1px}
+    .auth-lbl{font-size:10px;color:#8ca0c0;text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:5px}
+    .auth-inp{width:100%;background:#0a1628;border:1px solid rgba(255,255,255,0.07);color:#f0f4ff;padding:12px 14px;border-radius:8px;font-size:14px;font-family:'Inter',sans-serif;outline:none;margin-bottom:14px}
+    .auth-inp:focus{border-color:#00843a}
+    .auth-btn{width:100%;background:#00c853;border:none;color:#000;padding:13px;border-radius:8px;font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:16px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;margin-top:4px}
+    .auth-btn:hover{background:#00e65c}
+    .auth-err{background:rgba(229,62,62,0.12);border:1px solid rgba(229,62,62,0.3);color:#fc8181;font-size:12px;padding:10px 14px;border-radius:6px;margin-bottom:14px;display:none}
+    .auth-footer{text-align:center;font-size:11px;color:#8ca0c0;margin-top:24px}
+  `;
 
-async function _checkAuth() {
-  const { data: { session } } = await _supa.auth.getSession();
-  if (!session) {
-    // Show login screen
+  function showLoginScreen() {
     document.body.innerHTML = `
       <style>${AUTH_CSS}</style>
       <div class="auth-wrap">
         <div class="auth-box">
-          <div class="auth-logo">Scout<span>Board</span> <span style="font-size:12px;color:#8ca0c0;letter-spacing:3px">Pro</span></div>
+          <div class="auth-logo">Scout<span>Board</span></div>
           <div class="auth-sub">Accès réservé · Agence privée</div>
           <div class="auth-err" id="auth-err"></div>
           <label class="auth-lbl">Email</label>
           <input class="auth-inp" id="auth-email" type="email" placeholder="votre@email.com" autocomplete="email">
           <label class="auth-lbl">Mot de passe</label>
           <input class="auth-inp" id="auth-pwd" type="password" placeholder="••••••••" autocomplete="current-password">
-          <button class="auth-btn" onclick="_login()">Se connecter →</button>
+          <button class="auth-btn" id="auth-btn" onclick="window._login()">Se connecter →</button>
           <div class="auth-footer">ScoutBoard Pro · Plateforme privée</div>
         </div>
       </div>`;
     document.getElementById('auth-email').addEventListener('keydown', e => { if(e.key==='Enter') document.getElementById('auth-pwd').focus(); });
-    document.getElementById('auth-pwd').addEventListener('keydown', e => { if(e.key==='Enter') _login(); });
+    document.getElementById('auth-pwd').addEventListener('keydown', e => { if(e.key==='Enter') window._login(); });
+    document.body.style.display = '';
+  }
+
+  window._login = async function() {
+    const email = document.getElementById('auth-email').value.trim();
+    const password = document.getElementById('auth-pwd').value;
+    const errEl = document.getElementById('auth-err');
+    const btn = document.getElementById('auth-btn');
+    errEl.style.display = 'none';
+    if (!email || !password) { errEl.textContent = 'Remplissez email et mot de passe.'; errEl.style.display = 'block'; return; }
+    btn.textContent = 'Connexion…'; btn.disabled = true;
+    try {
+      const { error } = await window._supaClient.auth.signInWithPassword({ email, password });
+      if (error) {
+        errEl.textContent = error.message === 'Invalid login credentials' ? 'Email ou mot de passe incorrect.' : error.message;
+        errEl.style.display = 'block';
+        btn.textContent = 'Se connecter →'; btn.disabled = false;
+        return;
+      }
+      location.reload();
+    } catch(e) {
+      errEl.textContent = 'Erreur de connexion. Vérifiez votre connexion internet.';
+      errEl.style.display = 'block';
+      btn.textContent = 'Se connecter →'; btn.disabled = false;
+    }
+  };
+
+  // Guard: if key not replaced or Supabase not loaded, show app directly
+  const keyNotSet = !SUPA_KEY || SUPA_KEY === 'TA_PUBLISHABLE_KEY' || SUPA_KEY.length < 20;
+  const supaNotLoaded = !window.supabase;
+
+  if (keyNotSet || supaNotLoaded) {
+    // No auth configured yet — show app directly
+    document.body.style.display = '';
     return;
   }
-  // Logged in — show the app
-  document.body.style.display = '';
-}
 
-async function _login() {
-  const email = document.getElementById('auth-email').value.trim();
-  const password = document.getElementById('auth-pwd').value;
-  const errEl = document.getElementById('auth-err');
-  errEl.style.display = 'none';
-  if (!email || !password) { errEl.textContent = 'Remplissez email et mot de passe.'; errEl.style.display = 'block'; return; }
-  const btn = document.querySelector('.auth-btn');
-  btn.textContent = 'Connexion…'; btn.disabled = true;
-  const { error } = await _supa.auth.signInWithPassword({ email, password });
-  if (error) {
-    errEl.textContent = error.message === 'Invalid login credentials'
-      ? 'Email ou mot de passe incorrect.' : error.message;
-    errEl.style.display = 'block';
-    btn.textContent = 'Se connecter →'; btn.disabled = false;
-    return;
+  // Auth configured — hide body while checking
+  document.body.style.display = 'none';
+
+  try {
+    window._supaClient = window.supabase.createClient(SUPA_URL, SUPA_KEY);
+    const { data: { session } } = await window._supaClient.auth.getSession();
+    if (!session) {
+      showLoginScreen();
+    } else {
+      document.body.style.display = '';
+    }
+  } catch(e) {
+    // If anything fails, show app anyway (fail open)
+    document.body.style.display = '';
   }
-  location.reload();
-}
-
-// Hide body until auth check completes (avoids flash of content)
-document.body.style.display = 'none';
-_checkAuth();
+})();
 </script>
 
 </body>
