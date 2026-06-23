@@ -233,49 +233,41 @@ main { max-width: 1400px; margin: 0 auto; padding: 0; }
 .doc-progress-bar.show { display: block; }
 .doc-progress-fill { height: 100%; background: var(--grass); width: 0%; transition: width 0.2s; }
 
-/* PITCH IMPROVEMENTS */
-.pitch-wrap { background:
-  repeating-linear-gradient(
-    0deg,
-    rgba(0,0,0,0) 0px, rgba(0,0,0,0) 59px,
-    rgba(0,0,0,0.08) 59px, rgba(0,0,0,0.08) 60px
-  ),
-  linear-gradient(180deg,
-    #1b5e35 0%, #1e6b3d 12%,
-    #1b5e35 24%, #1e6b3d 36%,
-    #1b5e35 48%, #1e6b3d 60%,
-    #1b5e35 72%, #1e6b3d 84%,
-    #1b5e35 100%
-  );
+/* PITCH IMPROVEMENTS - CAF Best XI style background */
+.pitch-wrap {
+  background: linear-gradient(160deg, #6b1530 0%, #7d1a38 35%, #6b1530 70%, #5c1129 100%);
   border-radius: 12px 12px 0 0;
-  padding: 24px 32px;
-  border: 2px solid rgba(255,255,255,0.08);
+  padding: 28px 24px;
+  border: 2px solid rgba(255,255,255,0.1);
   min-height: 640px;
   position: relative;
-  box-shadow: inset 0 0 60px rgba(0,0,0,0.3);
+  box-shadow: inset 0 0 80px rgba(0,0,0,0.35);
+  overflow: hidden;
 }
 .pitch-wrap::before {
+  /* center circle */
   content: '';
   position: absolute;
-  top: 50%; left: 15%; right: 15%;
-  height: 1px; background: rgba(255,255,255,0.12);
+  top: calc(50% - 55px); left: calc(50% - 55px);
+  width: 110px; height: 110px;
+  border-radius: 50%;
+  border: 2px solid rgba(255,255,255,0.25);
 }
 .pitch-wrap::after {
+  /* halfway line */
   content: '';
   position: absolute;
-  top: calc(50% - 60px); left: calc(50% - 60px);
-  width: 120px; height: 120px;
-  border-radius: 50%;
-  border: 1px solid rgba(255,255,255,0.12);
+  top: 50%; left: 6%; right: 6%;
+  height: 2px; background: rgba(255,255,255,0.25);
 }
-.pitch-grid { display: flex; flex-direction: column; min-height: 580px; gap: 0; }
+.pitch-corner-tl, .pitch-corner-tr, .pitch-corner-bl, .pitch-corner-br { display: none; }
+.pitch-grid { position: relative; display: flex; flex-direction: column; min-height: 580px; gap: 0; z-index: 1; }
 .pitch-row { display: flex; justify-content: space-around; align-items: center; flex: 1; padding: 10px 0; }
-.player-slot { display: flex; flex-direction: column; align-items: center; gap: 6px; cursor: pointer; min-width: 80px; }
-.player-slot .slot-circle { width: 62px; height: 62px; border-radius: 50%; border: 2px dashed rgba(255,255,255,0.35); background: rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center; font-size: 22px; transition: all 0.2s; position: relative; box-shadow: 0 2px 8px rgba(0,0,0,0.4); }
-.player-slot.filled .slot-circle { border: 2px solid #fff; background: rgba(0,200,83,0.25); box-shadow: 0 0 14px rgba(0,200,83,0.35), 0 2px 8px rgba(0,0,0,0.4); }
-.player-slot .slot-circle:hover { border-color: var(--grass); background: rgba(0,200,83,0.15); }
-.player-slot .slot-name { font-family: 'Barlow Condensed', sans-serif; font-weight: 900; font-size: 13px; color: #fff; text-shadow: 0 1px 4px rgba(0,0,0,0.9), 0 0 8px rgba(0,0,0,0.8); text-align: center; max-width: 80px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; letter-spacing: 0.5px; }
-.player-slot .slot-pos { font-size: 9px; color: rgba(255,255,255,0.7); text-transform: uppercase; letter-spacing: 1.5px; font-weight: 700; background: rgba(0,0,0,0.4); padding: 1px 6px; border-radius: 8px; }
+.pitch-poster-header { display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 14px; position: relative; z-index: 1; }
+.pitch-poster-trophy { font-size: 22px; }
+.pitch-poster-title { display: flex; flex-direction: column; align-items: center; }
+.pitch-poster-name { font-family: 'Barlow Condensed', sans-serif; font-weight: 900; font-size: 17px; color: #fff; text-transform: uppercase; letter-spacing: 1.5px; text-shadow: 0 2px 6px rgba(0,0,0,0.4); }
+.pitch-poster-sub { font-size: 9px; color: rgba(255,255,255,0.65); text-transform: uppercase; letter-spacing: 2px; font-style: italic; margin-top: 1px; }
 
 /* CLUB CARD */
 .club-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 10px; padding: 18px; cursor: grab; transition: border-color 0.2s, transform 0.15s; position: relative; overflow: hidden; }
@@ -373,23 +365,61 @@ main { max-width: 1400px; margin: 0 auto; padding: 0; }
 .todo-add-row2 { display: flex; gap: 10px; margin-bottom: 14px; flex-wrap: wrap; }
 .todo-add-row2 input[type="date"], .todo-add-row2 input[type="time"] { background: var(--card-bg); border: 1px solid var(--border); color: var(--white); padding: 9px 11px; border-radius: 7px; font-size: 13px; font-family: 'Inter', sans-serif; outline: none; }
 
-/* 11 TYPE - PITCH */
+/* MONTH VIEW */
+.cal-month-dow-row { display: grid; grid-template-columns: repeat(7, 1fr); margin-bottom: 4px; }
+.cal-month-dow-cell { text-align: center; font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; font-weight: 700; padding: 6px 0; }
+.cal-month-grid { display: grid; grid-template-columns: repeat(7, 1fr); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; background: var(--card-bg); }
+.cal-month-cell { min-height: 96px; border-left: 1px solid var(--border); border-top: 1px solid var(--border); padding: 6px; cursor: pointer; transition: background 0.12s; position: relative; }
+.cal-month-cell:nth-child(7n+1) { border-left: none; }
+.cal-month-cell:nth-child(-n+7) { border-top: none; }
+.cal-month-cell:hover { background: rgba(0,200,83,0.04); }
+.cal-month-cell.other-month { opacity: 0.35; }
+.cal-month-cell.today { background: rgba(0,200,83,0.06); }
+.cal-month-daynum { font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 13px; margin-bottom: 4px; }
+.cal-month-cell.today .cal-month-daynum { color: var(--grass); display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 20px; border-radius: 50%; background: rgba(0,200,83,0.18); }
+.cal-month-event { font-size: 9px; font-weight: 600; padding: 2px 5px; border-radius: 4px; margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; border-left: 2px solid; }
+.cal-month-event.done { opacity: 0.4; text-decoration: line-through; }
+.cal-month-more { font-size: 9px; color: var(--muted); padding: 2px 5px; cursor: pointer; }
+.cal-month-more:hover { color: var(--white); }
+
+/* 11 TYPE - PITCH (CAF Best XI style) */
 .lineup-page { display: grid; grid-template-columns: 1fr 320px; gap: 24px; align-items: start; }
-.pitch-wrap { background: linear-gradient(180deg, #1a4a2e 0%, #1e5533 25%, #1a4a2e 50%, #1e5533 75%, #1a4a2e 100%); border-radius: 12px; padding: 20px; position: relative; border: 2px solid rgba(255,255,255,0.08); min-height: 600px; }
-.pitch-lines { position: absolute; inset: 20px; pointer-events: none; }
-.pitch-lines svg { width: 100%; height: 100%; }
 .formation-select { display: flex; gap: 8px; margin-bottom: 16px; align-items: center; flex-wrap: wrap; }
 .formation-select label { font-size: 11px; color: rgba(255,255,255,0.6); text-transform: uppercase; letter-spacing: 1px; }
 .formation-select select { background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.2); color: var(--white); padding: 7px 12px; border-radius: 6px; font-size: 13px; outline: none; cursor: pointer; }
-.pitch-grid { position: relative; display: flex; flex-direction: column; gap: 0; min-height: 540px; }
-.pitch-row { display: flex; justify-content: space-around; align-items: center; flex: 1; padding: 8px 0; }
-.player-slot { display: flex; flex-direction: column; align-items: center; gap: 5px; cursor: pointer; min-width: 70px; }
-.player-slot .slot-circle { width: 52px; height: 52px; border-radius: 50%; border: 2px dashed rgba(255,255,255,0.3); background: rgba(0,0,0,0.25); display: flex; align-items: center; justify-content: center; font-size: 20px; transition: all 0.2s; position: relative; }
-.player-slot.filled .slot-circle { border: 2px solid var(--grass); background: rgba(0,200,83,0.15); }
-.player-slot .slot-circle:hover { border-color: var(--grass); background: rgba(0,200,83,0.1); }
-.player-slot .slot-name { font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 12px; color: #fff; text-shadow: 0 1px 3px rgba(0,0,0,0.8); text-align: center; max-width: 70px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.player-slot .slot-pos { font-size: 9px; color: rgba(255,255,255,0.6); text-transform: uppercase; letter-spacing: 1px; }
-.remove-slot { position: absolute; top: -4px; right: -4px; width: 16px; height: 16px; background: var(--red); border-radius: 50%; border: none; color: #fff; font-size: 9px; cursor: pointer; display: none; align-items: center; justify-content: center; line-height: 1; }
+
+/* CAF-style player badge */
+.player-slot { display: flex; flex-direction: column; align-items: center; gap: 0; cursor: pointer; min-width: 78px; }
+.player-slot .slot-circle {
+  width: 64px; height: 64px; border-radius: 50%;
+  border: 3px dashed rgba(255,255,255,0.35);
+  background: rgba(255,255,255,0.92);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 22px; transition: all 0.2s; position: relative;
+  box-shadow: 0 3px 10px rgba(0,0,0,0.35);
+  overflow: hidden;
+}
+.player-slot.filled .slot-circle {
+  border: 3px solid var(--gold);
+  background: linear-gradient(160deg, #f4f4f4, #d8d8d8);
+  box-shadow: 0 0 0 3px rgba(240,180,41,0.25), 0 4px 12px rgba(0,0,0,0.4);
+}
+.player-slot .slot-circle:hover { border-color: var(--grass); }
+.player-slot .slot-initials { font-family: 'Barlow Condensed', sans-serif; font-weight: 900; font-size: 22px; color: #1a1a1a; }
+.player-slot .slot-flag { position: absolute; bottom: 1px; right: 1px; font-size: 15px; background: #fff; border-radius: 50%; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; box-shadow: 0 1px 4px rgba(0,0,0,0.4); }
+.player-slot .slot-name-banner {
+  margin-top: -3px; background: var(--pitch-mid); border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 5px; padding: 2px 9px; z-index: 2;
+  font-family: 'Barlow Condensed', sans-serif; font-weight: 900; font-size: 11px;
+  color: #fff; text-transform: uppercase; letter-spacing: 0.5px;
+  text-align: center; max-width: 92px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+}
+.player-slot .slot-pos {
+  font-size: 8px; color: var(--gold); text-transform: uppercase; letter-spacing: 1.5px; font-weight: 700;
+  margin-top: 2px;
+}
+.remove-slot { position: absolute; top: -3px; right: -3px; width: 18px; height: 18px; background: var(--red); border-radius: 50%; border: 2px solid var(--pitch-mid); color: #fff; font-size: 10px; cursor: pointer; display: none; align-items: center; justify-content: center; line-height: 1; z-index: 3; }
 .player-slot.filled:hover .remove-slot { display: flex; }
 
 /* SUBS PANEL */
@@ -1185,6 +1215,7 @@ main { max-width: 1400px; margin: 0 auto; padding: 0; }
       <button class="todo-view-btn active" onclick="setTodoView('list',this)">📃 Liste</button>
       <button class="todo-view-btn" onclick="setTodoView('day',this)">📆 Jour</button>
       <button class="todo-view-btn" onclick="setTodoView('week',this)">🗓️ Semaine</button>
+      <button class="todo-view-btn" onclick="setTodoView('month',this)">📅 Mois</button>
     </div>
 
     <!-- LIST VIEW -->
@@ -1217,6 +1248,18 @@ main { max-width: 1400px; margin: 0 auto; padding: 0; }
         <div id="cal-week-grid"></div>
       </div>
     </div>
+
+    <!-- MONTH VIEW -->
+    <div id="todo-view-month" style="display:none">
+      <div class="cal-nav-bar">
+        <button class="cal-nav-btn" onclick="calNav(-1)">‹</button>
+        <button class="cal-nav-btn" onclick="calNav(1)">›</button>
+        <span class="cal-nav-label" id="cal-month-label"></span>
+        <button class="cal-today-btn" onclick="calGoToday()">Aujourd'hui</button>
+      </div>
+      <div class="cal-month-dow-row" id="cal-month-dow"></div>
+      <div class="cal-month-grid" id="cal-month-grid"></div>
+    </div>
   </div>
 </div>
 
@@ -1239,10 +1282,18 @@ main { max-width: 1400px; margin: 0 auto; padding: 0; }
         <option value="5-3-2">5-3-2</option>
         <option value="3-4-3">3-4-3</option>
         <option value="4-5-1">4-5-1</option>
+        <option value="4-3-1-2 (Diamant CAF)">4-3-1-2 (Diamant CAF)</option>
       </select>
     </div>
     <div class="pitch-and-subs">
       <div class="pitch-wrap" style="border-radius:10px 10px 0 0">
+        <div class="pitch-poster-header">
+          <span class="pitch-poster-trophy">🏆</span>
+          <div class="pitch-poster-title">
+            <span class="pitch-poster-name" id="pitch-poster-name">Mon 11 Type</span>
+            <span class="pitch-poster-sub">HOPE · Best XI</span>
+          </div>
+        </div>
         <div class="pitch-grid" id="pitch-grid"></div>
       </div>
       <div class="subs-below">
@@ -2897,15 +2948,17 @@ function setTodoView(view, btn) {
   todoView = view;
   document.querySelectorAll('.todo-view-btn').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active');
-  document.getElementById('todo-view-list').style.display = view==='list' ? '' : 'none';
-  document.getElementById('todo-view-day').style.display  = view==='day'  ? '' : 'none';
-  document.getElementById('todo-view-week').style.display = view==='week' ? '' : 'none';
+  document.getElementById('todo-view-list').style.display  = view==='list'  ? '' : 'none';
+  document.getElementById('todo-view-day').style.display   = view==='day'   ? '' : 'none';
+  document.getElementById('todo-view-week').style.display  = view==='week'  ? '' : 'none';
+  document.getElementById('todo-view-month').style.display = view==='month' ? '' : 'none';
   if (view !== 'list') renderCalendar();
 }
 
 function calNav(dir) {
   if (todoView === 'day') calRefDate.setDate(calRefDate.getDate() + dir);
-  else calRefDate.setDate(calRefDate.getDate() + dir*7);
+  else if (todoView === 'week') calRefDate.setDate(calRefDate.getDate() + dir*7);
+  else if (todoView === 'month') calRefDate.setMonth(calRefDate.getMonth() + dir);
   renderCalendar();
 }
 function calGoToday() { calRefDate = new Date(); renderCalendar(); }
@@ -2925,6 +2978,7 @@ const CAL_HOURS = Array.from({length:15}, (_,i)=>i+7); // 7h to 21h
 function renderCalendar() {
   if (todoView === 'day') renderDayView();
   else if (todoView === 'week') renderWeekView();
+  else if (todoView === 'month') renderMonthView();
 }
 
 function todosForDate(dateKey) {
@@ -3015,6 +3069,66 @@ function renderWeekView() {
     `<div class="cal-week-grid">${headerHtml}</div><div class="cal-week-body">${bodyHtml}</div>`;
 }
 
+function renderMonthView() {
+  const refYear = calRefDate.getFullYear();
+  const refMonth = calRefDate.getMonth();
+  const todayKey = fmtDateKey(new Date());
+
+  document.getElementById('cal-month-label').textContent =
+    new Date(refYear, refMonth, 1).toLocaleDateString('fr-FR', { month:'long', year:'numeric' });
+
+  // DOW header (Mon -> Sun)
+  const dowNames = ['Lun','Mar','Mer','Jeu','Ven','Sam','Dim'];
+  document.getElementById('cal-month-dow').innerHTML =
+    dowNames.map(d=>`<div class="cal-month-dow-cell">${d}</div>`).join('');
+
+  // Build 6-week grid starting from Monday of the week containing the 1st
+  const firstOfMonth = new Date(refYear, refMonth, 1);
+  const gridStart = startOfWeek(firstOfMonth);
+  const cells = Array.from({length:42}, (_,i) => { const d=new Date(gridStart); d.setDate(d.getDate()+i); return d; });
+
+  document.getElementById('cal-month-grid').innerHTML = cells.map(d => {
+    const dateKey = fmtDateKey(d);
+    const isOtherMonth = d.getMonth() !== refMonth;
+    const isToday = dateKey === todayKey;
+    const dayTodos = todosForDate(dateKey);
+    const visible = dayTodos.slice(0, 3);
+    const extra = dayTodos.length - visible.length;
+    const priColor = { high:'#e53e3e', medium:'#f0b429', low:'#8ca0c0' };
+
+    return `<div class="cal-month-cell ${isOtherMonth?'other-month':''} ${isToday?'today':''}" onclick="quickAddOnDate('${dateKey}')">
+      <div class="cal-month-daynum">${d.getDate()}</div>
+      ${visible.map(t => `
+        <div class="cal-month-event cal-event-${t.priority} ${t.done?'done':''}"
+             style="border-left-color:${priColor[t.priority]||'#8ca0c0'}"
+             onclick="event.stopPropagation();toggleTodo('${t.id}')" title="${t.text}${t.time?' · '+t.time:''}">
+          ${t.time?`${t.time} `:''}${t.text}
+        </div>`).join('')}
+      ${extra > 0 ? `<div class="cal-month-more" onclick="event.stopPropagation();goToDayView('${dateKey}')">+${extra} autre${extra>1?'s':''}</div>` : ''}
+    </div>`;
+  }).join('');
+}
+
+function goToDayView(dateKey) {
+  calRefDate = new Date(dateKey+'T00:00:00');
+  todoView = 'day';
+  document.querySelectorAll('.todo-view-btn').forEach(b=>b.classList.remove('active'));
+  document.querySelector('.todo-view-btn[onclick*="\'day\'"]')?.classList.add('active');
+  document.getElementById('todo-view-list').style.display  = 'none';
+  document.getElementById('todo-view-day').style.display   = '';
+  document.getElementById('todo-view-week').style.display  = 'none';
+  document.getElementById('todo-view-month').style.display = 'none';
+  renderCalendar();
+}
+
+function quickAddOnDate(dateKey) {
+  const text = prompt(`Nouvelle tâche le ${new Date(dateKey+'T00:00:00').toLocaleDateString('fr-FR')} :`);
+  if (!text || !text.trim()) return;
+  todos.unshift({ id:uid(), text:text.trim(), priority:'medium', done:false, date:dateKey, time:null });
+  saveAll(); renderTodos(); renderCalendar();
+  showToast('Tâche ajoutée ✓');
+}
+
 function quickAddAt(dateKey, time) {
   const text = prompt(`Nouvelle tâche le ${new Date(dateKey+'T00:00:00').toLocaleDateString('fr-FR')} à ${time} :`);
   if (!text || !text.trim()) return;
@@ -3034,6 +3148,7 @@ const FORMATIONS = {
   '5-3-2': [['GK'],['LWB','CB','CB','CB','RWB'],['LM','CM','RM'],['ST','ST']],
   '3-4-3': [['GK'],['CB','CB','CB'],['LM','CM','CM','RM'],['LW','ST','RW']],
   '4-5-1': [['GK'],['LB','CB','CB','RB'],['LM','LCM','CM','RCM','RM'],['ST']],
+  '4-3-1-2 (Diamant CAF)': [['GK'],['LB','CB','CB','RB'],['LM','CM','RM'],['CAM'],['ST','ST']],
 };
 
 function changeFormation(){
@@ -3093,6 +3208,8 @@ function renderPitch(){
   const l = getActiveLineup();
   const form=l.formation||'4-3-3';
   document.getElementById('formation-select').value=form;
+  const posterNameEl = document.getElementById('pitch-poster-name');
+  if (posterNameEl) posterNameEl.textContent = l.name || 'Mon 11 Type';
   const rows=FORMATIONS[form]||FORMATIONS['4-3-3'];
   // Reverse so GK at bottom visually
   const reversed=[...rows].reverse();
@@ -3103,12 +3220,17 @@ function renderPitch(){
         const slotKey=`${ri}_${pi}`;
         const pid=l.slots[slotKey];
         const player=pid?allPlayers().find(p=>p.id===pid):null;
+        const initials = player ? player.name.split(' ')[0].charAt(0)+player.name.split(' ').slice(-1)[0].charAt(0) : '';
+        const lastName = player ? player.name.split(' ').slice(-1)[0] : '';
+        const flagCode = player ? FLAG_CODES[player.nationality] : null;
+        const flagE = flagCode ? flagEmoji(flagCode) : '';
         return `<div class="player-slot ${player?'filled':''}" onclick="openPicker('slot','${slotKey}')">
           <div class="slot-circle">
-            ${player?player.name.split(' ')[0].charAt(0)+player.name.split(' ').slice(-1)[0].charAt(0):''}
+            <span class="slot-initials">${initials}</span>
+            ${flagE ? `<span class="slot-flag">${flagE}</span>` : ''}
             ${player?`<button class="remove-slot" onclick="event.stopPropagation();removeSlot('${slotKey}')">✕</button>`:''}
           </div>
-          <div class="slot-name">${player?player.name.split(' ').slice(-1)[0]:''}</div>
+          ${player ? `<div class="slot-name-banner">${lastName}</div>` : ''}
           <div class="slot-pos">${pos}</div>
         </div>`;
       }).join('')}
