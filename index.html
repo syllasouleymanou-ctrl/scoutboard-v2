@@ -7,6 +7,9 @@
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;900&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jsvectormap/1.4.3/css/jsvectormap.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jsvectormap/1.4.3/js/jsvectormap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jsvectormap/1.4.3/maps/world.min.js"></script>
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 :root {
@@ -56,7 +59,9 @@ header { background: var(--pitch-mid); border-bottom: 1px solid var(--border); p
 .tab-btn.active { color: var(--grass); border-bottom-color: var(--grass); }
 
 /* MAIN */
-main { max-width: 1400px; margin: 0 auto; padding: 0; }
+main { max-width: 1400px; margin: 0 auto; padding: 0; width: 100%; }
+main:has(#tab-lineup.active) { max-width: none; }
+main.main-fullwidth { max-width: none; }
 .tab-panel { display: none; }
 .tab-panel.active { display: block; }
 
@@ -239,10 +244,17 @@ main { max-width: 1400px; margin: 0 auto; padding: 0; }
   border-radius: 12px 12px 0 0;
   padding: 28px 24px;
   border: 2px solid rgba(255,255,255,0.1);
-  min-height: 640px;
+  min-height: 680px;
   position: relative;
   box-shadow: inset 0 0 80px rgba(0,0,0,0.35);
   overflow: hidden;
+}
+@media (min-width: 1500px) {
+  .pitch-wrap { min-height: 760px; padding: 36px 60px; }
+  .player-slot .slot-circle { width: 76px; height: 76px; }
+  .player-slot .slot-initials { font-size: 26px; }
+  .player-slot .slot-flag { width: 24px; height: 24px; font-size: 17px; }
+  .player-slot .slot-name-banner { font-size: 13px; max-width: 110px; padding: 3px 11px; }
 }
 .pitch-wrap::before {
   /* center circle */
@@ -383,7 +395,7 @@ main { max-width: 1400px; margin: 0 auto; padding: 0; }
 .cal-month-more:hover { color: var(--white); }
 
 /* 11 TYPE - PITCH (CAF Best XI style) */
-.lineup-page { display: grid; grid-template-columns: 1fr 320px; gap: 24px; align-items: start; }
+/* removed duplicate .lineup-page grid rule (superseded below by flex column layout) */
 .formation-select { display: flex; gap: 8px; margin-bottom: 16px; align-items: center; flex-wrap: wrap; }
 .formation-select label { font-size: 11px; color: rgba(255,255,255,0.6); text-transform: uppercase; letter-spacing: 1px; }
 .formation-select select { background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.2); color: var(--white); padding: 7px 12px; border-radius: 6px; font-size: 13px; outline: none; cursor: pointer; }
@@ -723,6 +735,21 @@ main { max-width: 1400px; margin: 0 auto; padding: 0; }
 .map-view-btn { background: var(--card-bg); border: 1px solid var(--border); color: var(--muted); padding: 6px 14px; border-radius: 6px; font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 12px; letter-spacing: 1px; text-transform: uppercase; cursor: pointer; transition: all 0.15s; }
 .map-view-btn.active { background: var(--pitch-light); color: var(--white); border-color: rgba(255,255,255,0.2); }
 .map-view-btn:hover:not(.active) { color: var(--white); }
+
+/* ── SVG WORLD MAP ── */
+.map-data-toggle { display: flex; gap: 6px; margin-bottom: 14px; }
+.map-data-btn { background: var(--card-bg); border: 1px solid var(--border); color: var(--muted); padding: 6px 14px; border-radius: 16px; font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.15s; }
+.map-data-btn:hover:not(.active) { color: var(--white); border-color: rgba(255,255,255,0.2); }
+.map-data-btn.active { color: var(--white); background: rgba(0,200,83,0.12); border-color: rgba(0,200,83,0.4); }
+.world-svg-wrap { background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; padding: 16px; position: relative; }
+#world-svg-map { width: 100%; height: 460px; }
+#world-svg-map .jvm-zoom-btn { background: rgba(255,255,255,0.08); color: #fff; border-radius: 4px; }
+#world-svg-map .jvm-zoom-btn:hover { background: rgba(255,255,255,0.18); }
+#world-svg-map .jvm-tooltip { background: var(--pitch-mid); border: 1px solid var(--border); color: var(--white); font-family: 'Inter', sans-serif; font-size: 12px; padding: 6px 10px; border-radius: 6px; box-shadow: 0 4px 14px rgba(0,0,0,0.4); }
+.world-svg-legend { display: flex; align-items: center; gap: 10px; margin-top: 14px; flex-wrap: wrap; justify-content: center; font-size: 11px; color: var(--muted); }
+.world-svg-legend-scale { display: flex; align-items: center; gap: 4px; }
+.world-svg-legend-swatch { width: 14px; height: 14px; border-radius: 3px; }
+.world-svg-empty-hint { text-align: center; padding: 60px 20px; color: var(--muted); }
 
 /* World stats box */
 .world-stats-box { background: var(--card-bg); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; }
@@ -1080,14 +1107,27 @@ main { max-width: 1400px; margin: 0 auto; padding: 0; }
       <div style="font-size:12px;color:var(--muted);margin-top:2px">Répartition géographique de vos joueurs</div>
     </div>
     <div class="map-view-toggle">
-      <button class="map-view-btn active" id="map-btn-bubbles" onclick="setMapView('bubbles')">🫧 Bulles</button>
+      <button class="map-view-btn active" id="map-btn-svg" onclick="setMapView('svg')">🗺️ Carte</button>
+      <button class="map-view-btn" id="map-btn-bubbles" onclick="setMapView('bubbles')">🫧 Bulles</button>
       <button class="map-view-btn" id="map-btn-table" onclick="setMapView('table')">📋 Tableau</button>
     </div>
   </div>
   <div class="worldmap-layout">
     <div class="worldmap-main">
+      <!-- SVG Map view -->
+      <div id="map-view-svg">
+        <div class="map-data-toggle" id="map-data-toggle">
+          <button class="map-data-btn active" onclick="setMapDataType('players',this)">👤 Joueurs</button>
+          <button class="map-data-btn" onclick="setMapDataType('clubs',this)">🏟️ Clubs</button>
+          <button class="map-data-btn" onclick="setMapDataType('contacts',this)">📇 Contacts</button>
+        </div>
+        <div class="world-svg-wrap">
+          <div id="world-svg-map"></div>
+          <div class="world-svg-legend" id="world-svg-legend"></div>
+        </div>
+      </div>
       <!-- Bubbles view -->
-      <div id="map-view-bubbles">
+      <div id="map-view-bubbles" style="display:none">
         <div class="world-bubbles" id="world-bubbles"></div>
       </div>
       <!-- Table view -->
@@ -3944,7 +3984,7 @@ function setOppFilter(key, btn) {
 // ==============================
 // CARTE MONDIALE
 // ==============================
-let mapView = 'bubbles';
+let mapView = 'svg';
 let selectedNat = null;
 
 // Gradient palette for bubbles — from grass green to purple
@@ -3953,16 +3993,163 @@ const BUBBLE_COLORS = [
   '#f0b429','#e6a020','#db8c18','#d07810','#c56408',
 ];
 
+let mapDataType = 'players'; // players | clubs | contacts
+let jvmInstance = null;
+
 function setMapView(view) {
   mapView = view;
+  document.getElementById('map-view-svg').style.display     = view==='svg'     ? '' : 'none';
   document.getElementById('map-view-bubbles').style.display = view==='bubbles' ? '' : 'none';
   document.getElementById('map-view-table').style.display   = view==='table'   ? '' : 'none';
+  document.getElementById('map-btn-svg').classList.toggle('active',     view==='svg');
   document.getElementById('map-btn-bubbles').classList.toggle('active', view==='bubbles');
   document.getElementById('map-btn-table').classList.toggle('active',   view==='table');
+  if (view === 'svg') renderSvgWorldMap();
+}
+
+function setMapDataType(type, btn) {
+  mapDataType = type;
+  document.querySelectorAll('.map-data-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  renderSvgWorldMap();
+}
+
+// Build { isoCode: { count, label, items } } for the active data type
+function getMapDataByCountry() {
+  const data = {}; // iso -> { count, label, items: [...] }
+
+  function addEntry(iso, label, item) {
+    if (!iso) return;
+    iso = iso.toLowerCase();
+    if (!data[iso]) data[iso] = { count: 0, label, items: [] };
+    data[iso].count++;
+    data[iso].items.push(item);
+  }
+
+  if (mapDataType === 'players') {
+    allPlayers().forEach(p => {
+      const iso = FLAG_CODES[p.nationality];
+      addEntry(iso, p.nationality, { name: p.name, sub: `${p.position} · ${p.club}` });
+    });
+  } else if (mapDataType === 'clubs') {
+    clubs.forEach(c => {
+      const iso = FLAG_CODES[c.country];
+      addEntry(iso, c.country, { name: c.name, sub: c.league || '' });
+    });
+  } else if (mapDataType === 'contacts') {
+    contacts.forEach(c => {
+      const iso = FLAG_CODES[c.country];
+      addEntry(iso, c.country, { name: `${c.firstname} ${c.lastname}`, sub: c.category });
+    });
+  }
+  return data;
+}
+
+function renderSvgWorldMap() {
+  const container = document.getElementById('world-svg-map');
+  const JVM = window.jsVectorMap || window.JsVectorMap || (typeof jsVectorMap !== 'undefined' ? jsVectorMap : null) || (typeof JsVectorMap !== 'undefined' ? JsVectorMap : null);
+  if (!JVM) {
+    container.innerHTML = '<div class="world-svg-empty-hint">⚠️ La librairie de carte n\'a pas pu se charger. Vérifiez votre connexion internet.</div>';
+    return;
+  }
+
+  const dataByCountry = getMapDataByCountry();
+  const counts = Object.values(dataByCountry).map(d => d.count);
+  const maxCount = counts.length ? Math.max(...counts) : 1;
+
+  // Build values map for the series (iso -> count), fallback 0 for un-colored countries
+  const values = {};
+  Object.keys(dataByCountry).forEach(iso => { values[iso] = dataByCountry[iso].count; });
+
+  // Color scale: from a dim base to bright green
+  const baseColor = '#16243f';
+  const maxColor = '#00c853';
+
+  if (jvmInstance) {
+    try { if (typeof jvmInstance.destroy === 'function') jvmInstance.destroy(); } catch(e) {}
+    jvmInstance = null;
+  }
+  container.innerHTML = '';
+
+  jvmInstance = new JVM({
+    selector: '#world-svg-map',
+    map: 'world',
+    zoomButtons: true,
+    backgroundColor: 'transparent',
+    regionStyle: {
+      initial: { fill: '#1a2c4d', stroke: '#0a1628', strokeWidth: 0.5 },
+      hover: { fill: '#00c853', cursor: 'pointer' },
+      selected: { fill: '#00c853' },
+    },
+    series: {
+      regions: [{
+        values: values,
+        scale: [baseColor, maxColor],
+        normalizeFunction: 'polynomial',
+        attribute: 'fill',
+      }],
+    },
+    onRegionTooltipShow(event, tooltip, code) {
+      const iso = code.toLowerCase();
+      const d = dataByCountry[iso];
+      const typeLabel = { players:'joueur', clubs:'club', contacts:'contact' }[mapDataType];
+      if (d) {
+        tooltip.text(`${tooltip.text()} — ${d.count} ${typeLabel}${d.count>1?'s':''}`, true);
+      }
+    },
+    onRegionClick(event, code) {
+      const iso = code.toLowerCase();
+      showCountryDetail(iso, dataByCountry[iso]);
+    },
+  });
+
+  // Legend
+  document.getElementById('world-svg-legend').innerHTML = `
+    <span>Aucune donnée</span>
+    <div class="world-svg-legend-scale">
+      <span class="world-svg-legend-swatch" style="background:${baseColor}"></span>
+      <span>→</span>
+      <span class="world-svg-legend-swatch" style="background:${maxColor}"></span>
+    </div>
+    <span>Max (${maxCount})</span>
+  `;
+}
+
+function showCountryDetail(iso, data) {
+  // Find the country name from FLAG_CODES (reverse lookup) or use the data label
+  let countryName = data?.label;
+  if (!countryName) {
+    const entry = Object.entries(FLAG_CODES).find(([,code]) => code.toLowerCase() === iso);
+    countryName = entry ? entry[0] : iso.toUpperCase();
+  }
+  const flagE = flagEmoji(iso);
+  document.getElementById('wd-flag').textContent = flagE;
+  document.getElementById('wd-name').textContent = countryName;
+
+  if (!data || !data.items.length) {
+    document.getElementById('wd-count').textContent = 'Aucune donnée';
+    document.getElementById('wd-players').innerHTML = '<div style="font-size:12px;color:var(--muted);font-style:italic;padding:8px 0">Aucun élément enregistré pour ce pays.</div>';
+    document.getElementById('world-detail').style.display = 'block';
+    return;
+  }
+
+  const typeLabel = { players:'joueur', clubs:'club', contacts:'contact' }[mapDataType];
+  document.getElementById('wd-count').textContent = `${data.count} ${typeLabel}${data.count>1?'s':''}`;
+  document.getElementById('wd-players').innerHTML = data.items.map(item => `
+    <div class="world-detail-player">
+      <div style="flex:1;min-width:0">
+        <div class="wdp-name">${item.name}</div>
+        <div class="wdp-info">${item.sub}</div>
+      </div>
+    </div>`).join('');
+  document.getElementById('world-detail').style.display = 'block';
 }
 
 function renderWorldMap() {
   const ps = allPlayers();
+
+  // Render SVG map if that's the active view (it's the default)
+  if (mapView === 'svg') renderSvgWorldMap();
 
   // Count by nationality
   const natCount = {};
@@ -4275,6 +4462,9 @@ function switchTab(name,btn){
   const panel=document.getElementById('tab-'+name);
   if(panel) panel.classList.add('active');
   if(btn) btn.classList.add('active');
+  // Fallback for browsers without CSS :has() support — widen <main> for the lineup tab
+  const mainEl = document.querySelector('main');
+  if (mainEl) mainEl.classList.toggle('main-fullwidth', name==='lineup');
   if(name==='agelist')    renderAgeList();
   if(name==='pipeline')   renderPipeline();
   if(name==='dashboard')  renderDashboard();
