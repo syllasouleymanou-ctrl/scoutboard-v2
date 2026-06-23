@@ -61,6 +61,7 @@ header { background: var(--pitch-mid); border-bottom: 1px solid var(--border); p
 /* MAIN */
 main { max-width: 1400px; margin: 0 auto; padding: 0; width: 100%; }
 main:has(#tab-lineup.active) { max-width: none; }
+main:has(#tab-worldmap.active) { max-width: none; }
 main.main-fullwidth { max-width: none; }
 .tab-panel { display: none; }
 .tab-panel.active { display: block; }
@@ -746,6 +747,12 @@ main.main-fullwidth { max-width: none; }
 #world-svg-map .jvm-zoom-btn { background: rgba(255,255,255,0.08); color: #fff; border-radius: 4px; }
 #world-svg-map .jvm-zoom-btn:hover { background: rgba(255,255,255,0.18); }
 #world-svg-map .jvm-tooltip { background: var(--pitch-mid); border: 1px solid var(--border); color: var(--white); font-family: 'Inter', sans-serif; font-size: 12px; padding: 6px 10px; border-radius: 6px; box-shadow: 0 4px 14px rgba(0,0,0,0.4); }
+@media (min-width: 1100px) {
+  #world-svg-map { height: 600px; }
+}
+@media (min-width: 1500px) {
+  #world-svg-map { height: 720px; }
+}
 .world-svg-legend { display: flex; align-items: center; gap: 10px; margin-top: 14px; flex-wrap: wrap; justify-content: center; font-size: 11px; color: var(--muted); }
 .world-svg-legend-scale { display: flex; align-items: center; gap: 4px; }
 .world-svg-legend-swatch { width: 14px; height: 14px; border-radius: 3px; }
@@ -4004,14 +4011,22 @@ function setMapView(view) {
   document.getElementById('map-btn-svg').classList.toggle('active',     view==='svg');
   document.getElementById('map-btn-bubbles').classList.toggle('active', view==='bubbles');
   document.getElementById('map-btn-table').classList.toggle('active',   view==='table');
-  if (view === 'svg') renderSvgWorldMap();
+  if (view === 'svg') {
+    try { renderSvgWorldMap(); }
+    catch(e) {
+      console.error('renderSvgWorldMap failed:', e);
+      const c = document.getElementById('world-svg-map');
+      if (c) c.innerHTML = '<div class="world-svg-empty-hint">⚠️ Erreur lors du chargement de la carte.</div>';
+    }
+  }
 }
 
 function setMapDataType(type, btn) {
   mapDataType = type;
   document.querySelectorAll('.map-data-btn').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active');
-  renderSvgWorldMap();
+  try { renderSvgWorldMap(); }
+  catch(e) { console.error('renderSvgWorldMap failed:', e); }
 }
 
 // Build { isoCode: { count, label, items } } for the active data type
@@ -4027,17 +4042,17 @@ function getMapDataByCountry() {
   }
 
   if (mapDataType === 'players') {
-    allPlayers().forEach(p => {
+    (allPlayers() || []).forEach(p => {
       const iso = FLAG_CODES[p.nationality];
       addEntry(iso, p.nationality, { name: p.name, sub: `${p.position} · ${p.club}` });
     });
   } else if (mapDataType === 'clubs') {
-    clubs.forEach(c => {
+    (Array.isArray(clubs) ? clubs : []).forEach(c => {
       const iso = FLAG_CODES[c.country];
       addEntry(iso, c.country, { name: c.name, sub: c.league || '' });
     });
   } else if (mapDataType === 'contacts') {
-    contacts.forEach(c => {
+    (Array.isArray(contacts) ? contacts : []).forEach(c => {
       const iso = FLAG_CODES[c.country];
       addEntry(iso, c.country, { name: `${c.firstname} ${c.lastname}`, sub: c.category });
     });
@@ -4076,6 +4091,10 @@ function renderSvgWorldMap() {
     map: 'world',
     zoomButtons: true,
     backgroundColor: 'transparent',
+    onLoaded(map) {
+      // Ensure the map fills its container correctly once mounted/visible
+      setTimeout(() => { try { map.updateSize(); } catch(e) {} }, 50);
+    },
     regionStyle: {
       initial: { fill: '#1a2c4d', stroke: '#0a1628', strokeWidth: 0.5 },
       hover: { fill: '#00c853', cursor: 'pointer' },
@@ -4102,6 +4121,16 @@ function renderSvgWorldMap() {
       showCountryDetail(iso, dataByCountry[iso]);
     },
   });
+
+  // Resize the map if the window changes size (only attach once)
+  if (!window._worldMapResizeBound) {
+    window._worldMapResizeBound = true;
+    window.addEventListener('resize', () => {
+      if (jvmInstance && mapView === 'svg') {
+        try { jvmInstance.updateSize(); } catch(e) {}
+      }
+    });
+  }
 
   // Legend
   document.getElementById('world-svg-legend').innerHTML = `
@@ -4148,8 +4177,16 @@ function showCountryDetail(iso, data) {
 function renderWorldMap() {
   const ps = allPlayers();
 
-  // Render SVG map if that's the active view (it's the default)
-  if (mapView === 'svg') renderSvgWorldMap();
+  // Render SVG map if that's the active view (it's the default).
+  // Wrapped in try/catch so a map library failure never blocks bubbles/table/stats below.
+  if (mapView === 'svg') {
+    try { renderSvgWorldMap(); }
+    catch (e) {
+      console.error('renderSvgWorldMap failed:', e);
+      const c = document.getElementById('world-svg-map');
+      if (c) c.innerHTML = '<div class="world-svg-empty-hint">⚠️ Erreur lors du chargement de la carte. Les vues Bulles et Tableau restent disponibles.</div>';
+    }
+  }
 
   // Count by nationality
   const natCount = {};
@@ -4464,7 +4501,7 @@ function switchTab(name,btn){
   if(btn) btn.classList.add('active');
   // Fallback for browsers without CSS :has() support — widen <main> for the lineup tab
   const mainEl = document.querySelector('main');
-  if (mainEl) mainEl.classList.toggle('main-fullwidth', name==='lineup');
+  if (mainEl) mainEl.classList.toggle('main-fullwidth', name==='lineup' || name==='worldmap');
   if(name==='agelist')    renderAgeList();
   if(name==='pipeline')   renderPipeline();
   if(name==='dashboard')  renderDashboard();
