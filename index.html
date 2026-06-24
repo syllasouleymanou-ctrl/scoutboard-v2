@@ -4578,9 +4578,17 @@ async function pullAllFromSupabase() {
       window._supaClient.from('categories').select('*'),
     ]);
 
-    // ── Players (custom, non-static only) ──
+    // ── Players ──
+    // Two kinds of rows in the `players` table:
+    //  - is_static = true  → override metadata (category/pipeline/scout) for one of the 30 hard-coded players
+    //  - is_static = false → a real custom player added through the app
     if (!playersRes.error && playersRes.data) {
-      customPlayers = playersRes.data.map(row => ({ id: row.id, ...row.data }));
+      const staticRows = playersRes.data.filter(row => row.is_static);
+      const customRows = playersRes.data.filter(row => !row.is_static);
+
+      customPlayers = customRows.map(row => ({ id: row.id, ...row.data }));
+
+      // Reset then re-apply override maps from BOTH static and custom rows
       playerCatAssign = {};
       playersRes.data.forEach(row => { if (row.category_id) playerCatAssign[row.id] = row.category_id; });
       playersRes.data.forEach(row => { if (row.pipeline_step) playerPipeline[row.id] = row.pipeline_step; });
@@ -4675,11 +4683,11 @@ async function _doPush() {
 
   function logErr(label, error) { if (error) console.error(`Supabase upsert failed [${label}]:`, error.message || error); }
 
-  // Players (custom only — static ones aren't stored server-side)
+  // Custom players (added manually through the app)
   const playerRows = customPlayers.map(p => {
     const { id, ...data } = p;
     return {
-      id, data,
+      id, data, is_static: false,
       category_id: playerCatAssign[id] || null,
       pipeline_step: playerPipeline[id] || 'prospect',
       pipeline_comment: pipeComments[id] || null,
@@ -4687,7 +4695,23 @@ async function _doPush() {
       created_by: uid_,
     };
   });
-  if (playerRows.length) { const { error } = await client.from('players').upsert(playerRows); logErr('players', error); }
+
+  // Static players (one of the 30 hard-coded ones) that have at least one override
+  // (category assignment, pipeline status/comment, or scout report) get a lightweight
+  // row too — `data` is empty since the base info lives in the code, not the server.
+  const staticOverrideRows = STATIC_PLAYERS
+    .filter(p => playerCatAssign[p.id] || playerPipeline[p.id] || pipeComments[p.id] || scoutReports[p.id])
+    .map(p => ({
+      id: p.id, data: {}, is_static: true,
+      category_id: playerCatAssign[p.id] || null,
+      pipeline_step: playerPipeline[p.id] || 'prospect',
+      pipeline_comment: pipeComments[p.id] || null,
+      scout_report: scoutReports[p.id] || null,
+      created_by: uid_,
+    }));
+
+  const allPlayerRows = [...playerRows, ...staticOverrideRows];
+  if (allPlayerRows.length) { const { error } = await client.from('players').upsert(allPlayerRows); logErr('players', error); }
 
   // Clubs
   const clubRows = clubs.map(c => {
