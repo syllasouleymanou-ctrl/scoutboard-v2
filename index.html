@@ -1656,6 +1656,15 @@ main.main-fullwidth { max-width: none; }
 
 <script>
 // ==============================
+// SUPABASE CLIENT (initialized early so data sync can run before render)
+// ==============================
+const SUPA_URL = "https://djixnroctyjmhaclefbb.supabase.co";
+const SUPA_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRqaXhucm9jdHlqbWhhY2xlZmJiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE0MzA4OTQsImV4cCI6MjA5NzAwNjg5NH0.8qZPY5ySmv6kL44jnMzpgtxb2zf6KMvsf8RuhBU5DDc";
+if (window.supabase && !window._supaClient) {
+  try { window._supaClient = window.supabase.createClient(SUPA_URL, SUPA_KEY); } catch(e) { console.error('Supabase init failed', e); }
+}
+
+// ==============================
 // STATIC PLAYERS
 // ==============================
 const STATIC_PLAYERS = [
@@ -1781,6 +1790,7 @@ function getActiveLineup() {
 function saveLineups() {
   localStorage.setItem('lineups_v1', JSON.stringify(lineups));
   localStorage.setItem('activeLineupId_v1', activeLineupId);
+  pushAllToSupabase();
 }
 // Backward-compat alias used by older code paths (read-only proxy to active lineup)
 let lineup = getActiveLineup();
@@ -1805,6 +1815,7 @@ function saveAll(){
   save('todos_v2',todos);
   saveLineups();
   save('contacts_v1',contacts);
+  pushAllToSupabase();
 }
 
 // ==============================
@@ -1933,6 +1944,7 @@ function deleteCat(type, id){
     Object.keys(clubCatAssign).forEach(k=>{ if(clubCatAssign[k]===id) delete clubCatAssign[k]; });
   }
   saveAll();
+  deleteFromSupabase('categories', id);
   renderCatList(type);
   if(type==='player') renderPlayers();
   else renderClubs();
@@ -1981,7 +1993,7 @@ const PIPE_STEPS = [
   { key:'signe',    label:'Contrat signé',  icon:'✅', color:'var(--grass)',  desc:'Contrat signé' },
 ];
 let playerPipeline = JSON.parse(localStorage.getItem('playerPipeline') || '{}');
-function savePipeline() { localStorage.setItem('playerPipeline', JSON.stringify(playerPipeline)); }
+function savePipeline() { localStorage.setItem('playerPipeline', JSON.stringify(playerPipeline)); pushAllToSupabase(); }
 function getPipeStep(id) { return playerPipeline[id] || 'prospect'; }
 function getPipeIndex(id) { return PIPE_STEPS.findIndex(s => s.key === getPipeStep(id)); }
 function getStepByKey(key) { return PIPE_STEPS.find(s => s.key === key) || PIPE_STEPS[0]; }
@@ -2015,7 +2027,7 @@ const SCOUT_CRITERIA = [
   { key:'value',  label:'Valeur Marchande', color:'#a78bfa' },
 ];
 let scoutReports = JSON.parse(localStorage.getItem('scoutReports') || '{}');
-function saveScouts() { localStorage.setItem('scoutReports', JSON.stringify(scoutReports)); }
+function saveScouts() { localStorage.setItem('scoutReports', JSON.stringify(scoutReports)); pushAllToSupabase(); }
 function getScout(id) { return scoutReports[id] || null; }
 function calcScore(report) {
   if (!report) return null;
@@ -2180,6 +2192,7 @@ function deletePlayer(e,id){
   customPlayers=customPlayers.filter(x=>x.id!==id);
   delete playerCatAssign[id];
   saveAll(); renderPlayers(); renderCatList('player');
+  deleteFromSupabase('players', id);
 }
 
 // ==============================
@@ -2290,6 +2303,7 @@ function deleteClub(id){
   clubs=clubs.filter(x=>x.id!==id);
   delete clubCatAssign[id];
   saveAll(); renderClubs(); renderCatList('club');
+  deleteFromSupabase('clubs', id);
 }
 function openProfileMini(id){ pendingClubId=id; document.getElementById('profile-input').value=''; document.getElementById('profile-mini').classList.add('open'); setTimeout(()=>document.getElementById('profile-input').focus(),100); }
 function saveProfile(){
@@ -2420,6 +2434,7 @@ function deleteContact(id) {
   if (!confirm(`Supprimer le contact ${c?.firstname} ${c?.lastname} ?`)) return;
   contacts = contacts.filter(x=>x.id!==id);
   saveAll(); renderContacts();
+  deleteFromSupabase('contacts', id);
 }
 
 function setContactCat(cat) {
@@ -2942,7 +2957,7 @@ function saveProfileComment(){
 
 // Pipeline comments
 let pipeComments = JSON.parse(localStorage.getItem('pipeComments')||'{}');
-function savePipeComments(){ localStorage.setItem('pipeComments', JSON.stringify(pipeComments)); }
+function savePipeComments(){ localStorage.setItem('pipeComments', JSON.stringify(pipeComments)); pushAllToSupabase(); }
 function getPipeComment(id){ return pipeComments[id]||{club:'',note:''}; }
 function savePipeCommentInline(id) {
   const clubEl = document.getElementById('pci-club-'+id);
@@ -2968,7 +2983,7 @@ function addTodo(){
   renderTodos(); renderCalendar();
 }
 function toggleTodo(id){ todos=todos.map(t=>t.id===id?{...t,done:!t.done}:t); saveAll(); renderTodos(); renderCalendar(); }
-function deleteTodo(id){ todos=todos.filter(t=>t.id!==id); saveAll(); renderTodos(); renderCalendar(); }
+function deleteTodo(id){ todos=todos.filter(t=>t.id!==id); saveAll(); renderTodos(); renderCalendar(); deleteFromSupabase('todos', id); }
 function renderTodos(){
   const c=document.getElementById('todo-list');
   if(!todos.length){c.innerHTML='<div class="todo-empty">Aucune tâche. Ajoutez-en une ☝️</div>';return;}
@@ -3248,6 +3263,7 @@ function deleteLineup() {
   populateLineupSelect();
   renderPitch();
   showToast('11 type supprimé');
+  deleteFromSupabase('lineups', l.id);
 }
 
 function renderPitch(){
@@ -4539,10 +4555,205 @@ document.getElementById('todo-input').addEventListener('keydown',e=>{ if(e.key==
 document.getElementById('profile-input').addEventListener('keydown',e=>{ if(e.key==='Enter') saveProfile(); });
 document.getElementById('cat-input').addEventListener('keydown',e=>{ if(e.key==='Enter') confirmAddCategory(); });
 
-// INIT
-renderCatList('player'); renderCatList('club');
-renderPlayers(); renderClubs(); renderTodos();
-renderPitch(); updateStats(); renderDashboard();
+// ==============================
+// SUPABASE SYNC — central data storage
+// ==============================
+// Strategy: localStorage stays as an instant local cache (fast UI, offline-safe).
+// On boot, if a user session exists, we PULL the latest data from Supabase and
+// overwrite the local cache (server is the source of truth across devices).
+// On every saveAll()/saveLineups(), we PUSH the in-memory state to Supabase in
+// the background (fire-and-forget, never blocks the UI, fails silently offline).
+
+function isSupaReady() { return !!(window._supaClient); }
+
+async function pullAllFromSupabase() {
+  if (!isSupaReady()) return false;
+  try {
+    const [playersRes, clubsRes, contactsRes, todosRes, lineupsRes, catsRes] = await Promise.all([
+      window._supaClient.from('players').select('*'),
+      window._supaClient.from('clubs').select('*'),
+      window._supaClient.from('contacts').select('*'),
+      window._supaClient.from('todos').select('*'),
+      window._supaClient.from('lineups').select('*'),
+      window._supaClient.from('categories').select('*'),
+    ]);
+
+    // ── Players (custom, non-static only) ──
+    if (!playersRes.error && playersRes.data) {
+      customPlayers = playersRes.data.map(row => ({ id: row.id, ...row.data }));
+      playerCatAssign = {};
+      playersRes.data.forEach(row => { if (row.category_id) playerCatAssign[row.id] = row.category_id; });
+      playersRes.data.forEach(row => { if (row.pipeline_step) playerPipeline[row.id] = row.pipeline_step; });
+      playersRes.data.forEach(row => { if (row.pipeline_comment) pipeComments[row.id] = row.pipeline_comment; });
+      playersRes.data.forEach(row => { if (row.scout_report) scoutReports[row.id] = row.scout_report; });
+    }
+
+    // ── Clubs ──
+    if (!clubsRes.error && clubsRes.data) {
+      clubs = clubsRes.data.map(row => ({
+        id: row.id, ...row.data,
+        profiles: row.profiles || [],
+        playersToSell: row.players_to_sell || [],
+      }));
+      clubCatAssign = {};
+      clubsRes.data.forEach(row => { if (row.category_id) clubCatAssign[row.id] = row.category_id; });
+    }
+
+    // ── Contacts ──
+    if (!contactsRes.error && contactsRes.data) {
+      contacts = contactsRes.data.map(row => ({ id: row.id, ...row.data, history: row.history || [] }));
+    }
+
+    // ── Todos ──
+    if (!todosRes.error && todosRes.data) {
+      todos = todosRes.data.map(row => ({
+        id: row.id, text: row.text, priority: row.priority, done: row.done,
+        date: row.date, time: row.time ? row.time.slice(0,5) : null,
+      }));
+    }
+
+    // ── Lineups ──
+    if (!lineupsRes.error && lineupsRes.data && lineupsRes.data.length) {
+      lineups = lineupsRes.data.map(row => ({
+        id: row.id, name: row.name, formation: row.formation,
+        slots: row.slots || {}, subs: row.subs || [],
+      }));
+      if (!lineups.find(l => l.id === activeLineupId)) activeLineupId = lineups[0].id;
+    }
+
+    // ── Custom categories ──
+    if (!catsRes.error && catsRes.data) {
+      const customPlayerCats = catsRes.data.filter(c => c.type === 'player')
+        .map(c => ({ id: c.id, label: c.label, deletable: c.deletable }));
+      const customClubCats = catsRes.data.filter(c => c.type === 'club')
+        .map(c => ({ id: c.id, label: c.label, deletable: c.deletable }));
+      // Re-insert custom categories before the last default entry, avoiding duplicates
+      const defaultPlayerCats = playerCats.filter(c => !c.deletable);
+      const defaultClubCats = clubCats.filter(c => !c.deletable);
+      playerCats = [...defaultPlayerCats.slice(0,-1), ...customPlayerCats, ...defaultPlayerCats.slice(-1)];
+      clubCats = [...defaultClubCats.slice(0,-1), ...customClubCats, ...defaultClubCats.slice(-1)];
+    }
+
+    // Refresh local cache with the freshly pulled server data
+    persistLocalCache();
+    return true;
+  } catch (e) {
+    console.error('pullAllFromSupabase failed (offline?):', e);
+    return false;
+  }
+}
+
+function persistLocalCache(){
+  save('cp_v2',customPlayers);
+  save('playerCats',playerCats);
+  save('clubCats',clubCats);
+  save('playerCatAssign',playerCatAssign);
+  save('clubCatAssign',clubCatAssign);
+  save('clubs_v2',clubs);
+  save('todos_v2',todos);
+  save('contacts_v1',contacts);
+  save('playerPipeline',playerPipeline);
+  save('pipeComments',pipeComments);
+  save('scoutReports',scoutReports);
+  localStorage.setItem('lineups_v1', JSON.stringify(lineups));
+  localStorage.setItem('activeLineupId_v1', activeLineupId);
+}
+
+let _pushTimer = null;
+function pushAllToSupabase() {
+  if (!isSupaReady()) return;
+  // Debounce: collapse rapid successive saves into a single network round-trip
+  if (_pushTimer) clearTimeout(_pushTimer);
+  _pushTimer = setTimeout(() => { _doPush().catch(e => console.error('Supabase push failed (offline?):', e)); }, 400);
+}
+
+async function _doPush() {
+  const client = window._supaClient;
+  if (!client) return;
+  const { data: { user } } = await client.auth.getUser();
+  const uid_ = user?.id || null;
+
+  function logErr(label, error) { if (error) console.error(`Supabase upsert failed [${label}]:`, error.message || error); }
+
+  // Players (custom only — static ones aren't stored server-side)
+  const playerRows = customPlayers.map(p => {
+    const { id, ...data } = p;
+    return {
+      id, data,
+      category_id: playerCatAssign[id] || null,
+      pipeline_step: playerPipeline[id] || 'prospect',
+      pipeline_comment: pipeComments[id] || null,
+      scout_report: scoutReports[id] || null,
+      created_by: uid_,
+    };
+  });
+  if (playerRows.length) { const { error } = await client.from('players').upsert(playerRows); logErr('players', error); }
+
+  // Clubs
+  const clubRows = clubs.map(c => {
+    const { id, profiles, playersToSell, ...data } = c;
+    return { id, data, category_id: clubCatAssign[id] || null, profiles: profiles || [], players_to_sell: playersToSell || [], created_by: uid_ };
+  });
+  if (clubRows.length) { const { error } = await client.from('clubs').upsert(clubRows); logErr('clubs', error); }
+
+  // Contacts
+  const contactRows = contacts.map(c => {
+    const { id, history, ...data } = c;
+    return { id, data, history: history || [], created_by: uid_ };
+  });
+  if (contactRows.length) { const { error } = await client.from('contacts').upsert(contactRows); logErr('contacts', error); }
+
+  // Todos
+  const todoRows = todos.map(t => ({
+    id: t.id, text: t.text, priority: t.priority, done: !!t.done,
+    date: t.date || null, time: t.time ? (t.time.length===5 ? t.time+':00' : t.time) : null,
+    created_by: uid_,
+  }));
+  if (todoRows.length) { const { error } = await client.from('todos').upsert(todoRows); logErr('todos', error); }
+
+  // Lineups
+  const lineupRows = lineups.map(l => ({
+    id: l.id, name: l.name, formation: l.formation, slots: l.slots || {}, subs: l.subs || [], created_by: uid_,
+  }));
+  if (lineupRows.length) { const { error } = await client.from('lineups').upsert(lineupRows); logErr('lineups', error); }
+
+  // Custom categories
+  const catRows = [
+    ...playerCats.filter(c => c.deletable).map(c => ({ id: c.id, type: 'player', label: c.label, deletable: true })),
+    ...clubCats.filter(c => c.deletable).map(c => ({ id: c.id, type: 'club', label: c.label, deletable: true })),
+  ];
+  if (catRows.length) { const { error } = await client.from('categories').upsert(catRows); logErr('categories', error); }
+}
+
+// Detect deletions: when an item is removed locally, also remove it server-side.
+async function deleteFromSupabase(table, id) {
+  if (!isSupaReady() || !id) return;
+  try { await window._supaClient.from(table).delete().eq('id', id); }
+  catch(e) { console.error(`Supabase delete failed on ${table}:`, e); }
+}
+
+// ==============================
+// APP BOOT
+// ==============================
+async function bootApp() {
+  // Try to pull fresh data from Supabase before first render (source of truth across devices)
+  if (isSupaReady()) {
+    try {
+      const { data: { session } } = await window._supaClient.auth.getSession();
+      if (session) await pullAllFromSupabase();
+    } catch(e) { console.error('Boot pull failed:', e); }
+  }
+
+  // Re-sync the active lineup pointer + ensure at least one lineup exists
+  if (!lineups.length) lineups = [{ id:'l_'+Date.now(), name:'Mon 11 Type', formation:'4-3-3', slots:{}, subs:[] }];
+  if (!lineups.find(l=>l.id===activeLineupId)) activeLineupId = lineups[0].id;
+
+  renderCatList('player'); renderCatList('club');
+  renderPlayers(); renderClubs(); renderTodos();
+  renderPitch(); updateStats(); renderDashboard();
+}
+
+// INIT moved to bootApp() below — see SUPABASE SYNC section
 </script>
 <!-- ═══ SUPABASE AUTH ═══ -->
 <script>
@@ -4619,13 +4830,14 @@ renderPitch(); updateStats(); renderDashboard();
   const supaNotLoaded = !window.supabase;
 
   if (keyNotSet || supaNotLoaded) {
-    // No auth configured yet — show app directly (Storage features will be unavailable)
+    // No auth configured yet — show app directly (local-only mode)
     document.body.style.display = '';
+    await bootApp();
     return;
   }
 
   // Create the client early so Storage (Documents) works even before full auth flow renders
-  window._supaClient = window.supabase.createClient(SUPA_URL, SUPA_KEY);
+  if (!window._supaClient) window._supaClient = window.supabase.createClient(SUPA_URL, SUPA_KEY);
 
   // Auth configured — hide body while checking
   document.body.style.display = 'none';
@@ -4639,10 +4851,12 @@ renderPitch(); updateStats(); renderDashboard();
       const emailEl = document.getElementById('header-email');
       if(emailEl){ emailEl.textContent = '👤 ' + session.user.email; emailEl.style.display='inline'; }
       document.body.style.display = '';
+      await bootApp();
     }
   } catch(e) {
-    // If anything fails, show app anyway (fail open)
+    // If anything fails, show app anyway (fail open) using local cache
     document.body.style.display = '';
+    await bootApp();
   }
 })();
 </script>
